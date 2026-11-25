@@ -1,0 +1,467 @@
+<title>헤맨 만큼 내 땅이다 · 지도</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 화면 전체가 하나의 홀로그램 지형도. 모서리 브래킷 HUD가 지도를 감싸고, 위에는 필박스 내비, 아래엔 여정 타임라인, 오른쪽 아래 레이더 미니맵. 다크 단일 테마. */
+:root{
+  color-scheme: dark;
+  --void:#02070a;            /* 지도 아래 어둠 */
+  --holo:#3ff5d6;            /* 홀로그램 청록 */
+  --holo-dim:rgba(63,245,214,.55);
+  --line:rgba(63,245,214,.18);
+  --text:#e3fffa;
+  --dim:#7fa7a1;
+  --glass:rgba(4,20,22,.62);
+  --ship:#3fd2ff; --semi:#6dffa8; --ai:#ff6ad5; --data:#ffb547; --exp:#b9d7e0;
+  --f-display:"Chakra Petch","IBM Plex Sans KR",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+html,body{height:100%}
+body{margin:0;background:var(--void);color:var(--text);font-family:var(--f-body);overflow:hidden;word-break:keep-all;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--holo);outline-offset:3px}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.fx{position:fixed;inset:0;pointer-events:none;z-index:3}
+.fx.scan{background:repeating-linear-gradient(180deg,rgba(63,245,214,.035) 0 1px,transparent 1px 3px);mix-blend-mode:screen}
+.fx.vig{background:radial-gradient(120% 90% at 50% 50%,transparent 50%,rgba(0,0,0,.75) 100%)}
+.fx.sweep{background:linear-gradient(180deg,transparent,rgba(63,245,214,.08) 48%,rgba(63,245,214,.18) 50%,transparent 52%);background-size:100% 300%;animation:sweep 7s linear infinite;mix-blend-mode:screen}
+@keyframes sweep{0%{background-position:0 100%}100%{background-position:0 -200%}}
+
+/* 모서리 브래킷 프레임 */
+.frame{position:fixed;inset:calc(10px + env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));pointer-events:none;z-index:6}
+.frame i{position:absolute;width:26px;height:26px;border-color:var(--holo-dim);border-style:solid}
+.frame i:nth-child(1){left:0;top:0;border-width:2px 0 0 2px}.frame i:nth-child(2){right:0;top:0;border-width:2px 2px 0 0}
+.frame i:nth-child(3){left:0;bottom:0;border-width:0 0 2px 2px}.frame i:nth-child(4){right:0;bottom:0;border-width:0 2px 2px 0}
+
+/* 좌상단 타이틀 */
+.brand::before{content:"";position:absolute;inset:-30px -60px -24px -40px;z-index:-1;background:radial-gradient(closest-side,rgba(2,7,10,.85),rgba(2,7,10,0));pointer-events:none}
+.brand{position:fixed;left:max(28px,env(safe-area-inset-left,0px));top:calc(26px + env(safe-area-inset-top,0px));z-index:10;max-width:min(440px,60vw)}
+.brand .k{font-family:var(--f-mono);font-size:.625rem;letter-spacing:.24em;color:var(--holo)}
+.brand h1{margin:6px 0 0;font-size:clamp(1.3rem,2.6vw,2rem);font-weight:700;letter-spacing:.02em;text-shadow:0 0 18px rgba(63,245,214,.55)}
+.brand p{margin:6px 0 0;font-size:.8125rem;color:var(--dim);line-height:1.6}
+.coords{margin-top:10px;font-family:var(--f-mono);font-size:.625rem;letter-spacing:.12em;color:var(--holo-dim);font-variant-numeric:tabular-nums}
+
+/* 우상단 필박스 */
+.pill{position:fixed;right:max(28px,env(safe-area-inset-right,0px));top:calc(26px + env(safe-area-inset-top,0px));z-index:10;display:flex;align-items:center;gap:12px;padding:8px 16px;border-radius:999px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-family:var(--f-mono);font-size:.6875rem;letter-spacing:.14em}
+.pill button{background:none;border:0;cursor:pointer;color:var(--dim);padding:2px 0;transition:color .2s,text-shadow .2s;letter-spacing:inherit}
+.pill button:hover,.pill button.on{color:var(--text);text-shadow:0 0 10px var(--holo)}
+.pill i{width:34px;height:1px;background:linear-gradient(90deg,var(--dim),var(--holo))}
+
+/* 좌측 범례 */
+.legend{position:fixed;left:max(28px,env(safe-area-inset-left,0px));top:50%;transform:translateY(-50%);z-index:10;display:grid;gap:6px}
+.legend .h{font-family:var(--f-mono);font-size:.625rem;letter-spacing:.2em;color:var(--dim);margin-bottom:4px}
+.legend button{display:flex;align-items:center;gap:10px;text-align:left;padding:7px 12px 7px 10px;border-radius:8px;border:1px solid transparent;background:rgba(2,10,12,.45);cursor:pointer;font-family:var(--f-mono);font-size:.6875rem;letter-spacing:.06em;color:var(--dim);transition:all .2s}
+.legend button i{width:9px;height:9px;transform:rotate(45deg);background:var(--c);box-shadow:0 0 10px var(--c);flex:none}
+.legend button:hover,.legend button.on{color:var(--text);border-color:var(--c)}
+.legend .stats{margin-top:12px;display:grid;gap:4px;font-family:var(--f-mono);font-size:.625rem;letter-spacing:.1em;color:var(--dim);font-variant-numeric:tabular-nums}
+.legend .stats b{color:var(--holo);font-weight:500}
+
+/* 스팟 라벨 (3D 위 DOM) */
+#labels{position:fixed;inset:0;z-index:8;pointer-events:none}
+.lbl{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;padding:0 0 6px;transition:opacity .3s}
+.lbl .t{white-space:nowrap;padding:4px 9px;border-radius:6px;background:rgba(2,12,14,.72);border:1px solid color-mix(in srgb,var(--c) 55%,transparent);color:var(--text);font-size:.75rem;font-weight:600;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:transform .25s,box-shadow .25s,background .25s}
+.lbl .y{font-family:var(--f-mono);font-size:.5625rem;letter-spacing:.12em;color:var(--c)}
+.lbl.minor .t{font-weight:500;font-size:.6875rem;color:#cfe7ea;border-color:rgba(185,215,224,.3)}
+.lbl:hover .t,.lbl.on .t{transform:scale(1.08);box-shadow:0 0 22px -4px var(--c);background:rgba(2,18,20,.9)}
+.lbl.on .t{border-color:var(--c)}
+.lbl.dim{opacity:.18}
+
+/* 하단 여정 타임라인 */
+.tl{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:10;width:min(760px,calc(100% - 300px));padding:12px 16px 14px;border-radius:12px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.tl .top{display:flex;justify-content:space-between;gap:12px;align-items:baseline;font-family:var(--f-mono);font-size:.625rem;letter-spacing:.16em;color:var(--dim)}
+.tl .top b{color:var(--holo);font-weight:500}
+.track{position:relative;height:30px;margin-top:10px}
+.track::before{content:"";position:absolute;left:0;right:0;top:14px;height:1px;background:linear-gradient(90deg,transparent,var(--holo-dim),transparent)}
+.prog{position:absolute;left:0;top:13px;height:3px;border-radius:2px;background:var(--holo);box-shadow:0 0 10px var(--holo);transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.tk{position:absolute;top:6px;width:16px;height:16px;margin-left:-8px;border-radius:50%;border:1px solid var(--c);background:var(--void);cursor:pointer;padding:0;transition:transform .25s,box-shadow .25s}
+.tk.p{width:18px;height:18px;margin-left:-9px;top:5px;transform:rotate(45deg);border-radius:3px}
+.tk:hover,.tk.on{box-shadow:0 0 14px var(--c);background:var(--c)}
+.tk.on{transform:scale(1.25)}.tk.p.on{transform:rotate(45deg) scale(1.25)}
+.yrs{position:relative;height:12px;font-family:var(--f-mono);font-size:.5625rem;color:var(--dim)}
+.yrs span{position:absolute;transform:translateX(-50%)}
+
+/* 레이더 미니맵 */
+.radar{position:fixed;right:max(26px,env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:10;width:176px;height:176px;border-radius:50%;background:radial-gradient(circle,rgba(4,26,26,.8),rgba(2,10,12,.85));border:1px solid var(--line);box-shadow:0 0 30px -10px var(--holo)}
+.radar canvas{width:100%;height:100%;display:block;border-radius:50%}
+.radar span{position:absolute;left:50%;top:-18px;transform:translateX(-50%);font-family:var(--f-mono);font-size:.5625rem;letter-spacing:.2em;color:var(--dim);white-space:nowrap}
+.ov{position:fixed;right:max(214px,env(safe-area-inset-right,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px));z-index:10}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:8px;border:1px solid var(--line);background:var(--glass);cursor:pointer;font-family:var(--f-mono);font-size:.6875rem;letter-spacing:.1em;color:var(--dim);text-decoration:none;transition:all .2s;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.btn:hover{color:var(--text);border-color:var(--holo);box-shadow:0 0 18px -6px var(--holo)}
+
+/* 상세 패널 (홀로그램 글래스) */
+.panel{position:fixed;top:calc(84px + env(safe-area-inset-top,0px));right:max(26px,env(safe-area-inset-right,0px));bottom:calc(220px + env(safe-area-inset-bottom,0px));z-index:30;width:min(420px,calc(100% - 52px));overflow-y:auto;box-sizing:border-box;padding:22px 22px 24px;border-radius:14px;background:linear-gradient(160deg,rgba(6,34,34,.82),rgba(3,14,18,.9));border:1px solid color-mix(in srgb,var(--c,var(--holo)) 45%,transparent);box-shadow:0 0 50px -18px var(--c,var(--holo)),inset 0 0 40px -20px var(--c,var(--holo));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);opacity:0;transform:translateX(24px) scale(.98);pointer-events:none;transition:opacity .45s,transform .45s cubic-bezier(.2,.8,.2,1)}
+.panel.open{opacity:1;transform:none;pointer-events:auto}
+.panel::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:repeating-linear-gradient(180deg,rgba(255,255,255,.025) 0 1px,transparent 1px 4px)}
+.panel .x{position:absolute;right:12px;top:12px;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:none;cursor:pointer}
+.panel .x:hover{border-color:var(--c,var(--holo));color:var(--c,var(--holo))}
+.panel .eb{font-family:var(--f-mono);font-size:.625rem;letter-spacing:.18em;color:var(--c,var(--holo));padding-right:36px}
+.panel h2{margin:8px 36px 0 0;font-size:1.45rem;line-height:1.3;text-wrap:balance}
+.panel .org{color:var(--dim);font-size:.875rem;margin-top:6px;line-height:1.5}
+.panel .shot{margin-top:14px;border-radius:9px;overflow:hidden;border:1px solid var(--line);aspect-ratio:16/9;background:#06181a}
+.panel .shot img{width:100%;height:100%;object-fit:cover;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{font-family:var(--f-mono);font-size:.6875rem;padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+.chip.st{border-color:var(--c,var(--holo));color:var(--c,var(--holo))}
+.panel h3{font-family:var(--f-mono);font-size:.625rem;letter-spacing:.18em;color:var(--dim);font-weight:400;margin:20px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.panel p.b{margin:0;line-height:1.75;font-size:.9375rem}
+.panel ul{margin:0;padding-left:1.1em;line-height:1.7;display:grid;gap:4px;font-size:.9375rem}
+.panel li::marker{color:var(--c,var(--holo))}
+.panel .go{margin-top:20px;display:flex;justify-content:center;padding:12px;border-radius:10px;border:1px solid var(--c,var(--holo));color:var(--c,var(--holo));text-decoration:none;font-family:var(--f-mono);font-size:.75rem;letter-spacing:.1em;background:color-mix(in srgb,var(--c,var(--holo)) 10%,transparent);transition:box-shadow .25s}
+.panel .go:hover{box-shadow:0 0 24px -4px var(--c,var(--holo))}
+.panel .nav2{display:flex;justify-content:space-between;margin-top:14px;gap:8px}
+.mail{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.mail code{font-family:var(--f-mono);padding:10px 12px;border:1px solid var(--line);border-radius:8px;user-select:all}
+
+.boot{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:var(--void);transition:opacity .8s ease .2s;pointer-events:none}
+.boot.done{opacity:0}
+.boot pre{margin:0;font-family:var(--f-mono);font-size:.75rem;line-height:1.9;color:var(--holo);letter-spacing:.08em;min-width:min(360px,80vw)}
+.nogl{position:fixed;inset:0;display:none;place-items:center;text-align:center;padding:24px;color:var(--dim);z-index:2}
+
+@media (max-width:900px){
+  .legend{display:none}
+  .tl{width:calc(100% - 32px);bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .radar{width:110px;height:110px;bottom:calc(120px + env(safe-area-inset-bottom,0px));right:max(16px,env(safe-area-inset-right,0px))}
+  .ov{right:auto;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(126px + env(safe-area-inset-bottom,0px))}
+  .panel{top:auto;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));width:auto;bottom:calc(118px + env(safe-area-inset-bottom,0px));max-height:58vh}
+  .brand{max-width:calc(100% - 60px)}
+  .brand p,.coords{display:none}
+  .pill{top:auto;right:auto;left:max(16px,env(safe-area-inset-left,0px));top:calc(84px + env(safe-area-inset-top,0px))}
+  .lbl.minor{display:none}
+}
+@media (prefers-reduced-motion:reduce){ .fx.sweep{animation:none;display:none} .panel,.boot{transition:none} }
+</style>
+
+<canvas id="gl" aria-label="걸어온 경로를 따라 프로젝트와 경험 스팟이 표시된 홀로그램 지형도. 스팟을 누르면 상세 내용이 열립니다."></canvas>
+<div class="fx sweep"></div><div class="fx scan"></div><div class="fx vig"></div>
+<div class="frame"><i></i><i></i><i></i><i></i></div>
+<div id="labels"></div>
+
+<div class="boot" id="boot"><pre id="bootT"></pre></div>
+
+<header class="brand">
+  <div class="k">CHOI HYUNSEO · TERRITORY MAP</div>
+  <h1 id="slogan">헤맨 만큼 내 땅이다</h1>
+  <p>반도체 공정과 품질 데이터에서 출발해 조선 · 제조 DX와 AI로 걸어온 길. 걸은 만큼 지도가 밝아집니다.</p>
+  <div class="coords" id="coords">LAT 00.000 · LON 00.000 · ELV 0.0</div>
+</header>
+<nav class="pill" aria-label="메뉴"><button type="button" id="bWork">WORK</button><i></i><button type="button" id="bContact">CONTACT</button></nav>
+
+<aside class="legend" aria-label="분야">
+  <div class="h">TERRITORIES</div>
+  <div id="lg"></div>
+  <div class="stats">
+    <div>SPOTS <b id="sN">00</b></div>
+    <div>PROJECTS <b id="sP">00</b></div>
+    <div>CLAIMED <b id="sC">00%</b></div>
+  </div>
+</aside>
+
+<section class="tl" aria-label="여정 타임라인">
+  <div class="top"><span>JOURNEY · <b id="tlIdx">00 / 00</b></span><span id="tlName">SCROLL TO WANDER ↓</span></div>
+  <div class="track" id="track"><div class="prog" id="prog"></div></div>
+  <div class="yrs" id="yrs"></div>
+</section>
+
+<div class="ov"><button type="button" class="btn" id="bOv">◎ OVERVIEW</button></div>
+<div class="radar"><span>RADAR</span><canvas id="rad" width="352" height="352"></canvas></div>
+
+<aside class="panel" id="panel" aria-hidden="true"><button type="button" class="x" id="px" aria-label="닫기">✕</button><div id="pbody"></div></aside>
+
+<div class="nogl" id="nogl"><div><p>이 브라우저에서는 3D 지도를 표시할 수 없습니다.</p><p>아래 타임라인에서 각 스팟을 눌러 내용을 볼 수 있습니다.</p></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+/* ───────── 데이터 (이력서 기준) ───────── */
+var PIPEGUIDE_URL='pipeguide/';
+var FITOUT_URL='fitout/';
+var CAT={
+  semi:{n:'반도체 · 품질 분석',c:'#6dffa8'},
+  ai:{n:'AI 서비스 · 교육',c:'#ff6ad5'},
+  data:{n:'데이터 분석 · 시각화',c:'#ffb547'},
+  ship:{n:'조선 · 제조 DX',c:'#3fd2ff'},
+  base:{n:'출발점 · 활동',c:'#b9d7e0'}
+};
+// 시간 순서 = 걸어온 경로
+var S=[
+ {id:'dongeui',kind:'exp',cat:'base',x:0,z:24,h:1.6,t:2020.2,date:'2020.03 – 2026.02',title:'동의대학교 신소재공학부',en:'BASE CAMP',
+  org:'공과대학 신소재공학부 · 전공 전기전자소재공학 · 졸업',status:'GPA 4.07 / 4.5',
+  sum:'전체 GPA 4.07/4.5(백분율 94.70), 최근 2학기 4.50, 총 133학점. 반도체 공정과 소재를 공부하며 첫 땅을 다졌습니다.',
+  pts:['반도체공정기초 A+ · 박막공정및실습 A+ · 전력반도체패키지재료 A+','전자부품검사및실습 A+ · 재료의기계적성질 A+ · CAD/CAM A+','X선회절및분석 A0 · 재료과학개론Ⅰ A+'],tags:['반도체 공정','소재','CAD/CAM']},
+ {id:'viewsan',kind:'exp',cat:'base',x:-15,z:30,h:1.2,t:2024.2,date:'2024.03 – 2025.01',title:'VIEWSAN 외국인 가이드',en:'FIELD ACTIVITY',
+  org:'대외활동 · 영상팀',status:'홍보영상 4편',
+  sum:'외국인 투어 가이드로 활동하며 영상팀에서 홍보영상 4편을 기획 · 촬영 · 편집했습니다.',
+  pts:['홍보영상 4편 기획 · 촬영 · 편집','외국인 대상 투어 가이드'],tags:['영상 기획','커뮤니케이션']},
+ {id:'postech',kind:'exp',cat:'semi',x:-27,z:14,h:2.2,t:2025.55,date:'2025.07',title:'POSTECH NINT FAB 실습',en:'FAB TRAINING',
+  org:'반도체소자공정의 이해 · 동의대 교과목',status:'공정 실습',
+  sum:'POSTECH NINT 팹에서 반도체 소자 공정을 직접 실습했습니다.',
+  pts:['포토 · Etch · 확산 · 박막 · 세정 공정 실습'],tags:['포토','Etch','확산','박막','세정']},
+ {id:'furnace',kind:'proj',cat:'semi',x:-32,z:-2,h:5.2,t:2025.95,date:'2025.12',title:'Furnace 공정 데이터 분석',en:'FURNACE PROCESS DATA',
+  org:'반도체 Data Science 인력양성 과정 (5일) · 팀 프로젝트',status:'Furnace 분석 · 최종 발표',
+  sum:'Furnace 공정 Lot 1~16 데이터(Thickness · Vth · TC · MFC)를 통계적으로 분석해 공정 변수의 영향과 wafer 위치별 이상 패턴을 찾았습니다.',
+  pts:['1-sample t-test로 공정 변수 간 유의차가 없음을 확인 (p > 0.05)','Thickness–Vth 회귀분석으로 R² 94.7% 도출','wafer 위치별 분석에서 center 영역 Thickness · Vth 동시 저하 패턴 확인 → heating zone 관련 원인 가설 제시'],tags:['Minitab','Excel','t-test','회귀분석']},
+ {id:'etch',kind:'exp',cat:'semi',x:-20,z:-14,h:2.4,t:2026.05,date:'2026.01 – 02',title:'코멘토 ETCH 공정기술 실무',en:'ETCH PROCESS',
+  org:'5주 실무 교육 · 현직 엔지니어 피드백 과제',status:'Etch 공정',
+  sum:'Etch Rate(약 33.33 Å/s)로 막 두께가 바뀔 때의 식각시간(약 45초)을 산출하고 리스크를 검토했습니다.',
+  pts:['Etch Rate 기반 식각시간 산출','막 두께 변경 시 리스크 검토','현직 엔지니어 피드백 반영'],tags:['Etch','공정기술']},
+ {id:'hanwha',kind:'exp',cat:'ship',x:6,z:2,h:2.8,t:2026.35,date:'2026.05 – 2026.11',title:'한화오션 Engineering / DX 교육',en:'900 HOURS',
+  org:'교육과정 수료 (2026.11.06 · 900시간)',status:'900시간 수료',
+  sum:'선박 · 선체 구조부터 LNG 화물창 · 극저온 소재, 의장 · 생산설계, 품질관리 기법, C# 데이터 시각화까지 조선 설계 DX를 익혔습니다.',
+  pts:['선박 · 선체 구조, LNG 화물창 · 극저온 소재','의장 · 생산설계, 품질관리 기법','C# 데이터 시각화 · AVEVA Marine 선체 구조 모델링 실습'],tags:['AVEVA Marine','C#','품질관리']},
+ {id:'aiedu',kind:'exp',cat:'ai',x:-5,z:-24,h:2,t:2026.45,date:'2026.06 – 07',title:'부산권 대학연합 AI 교육',en:'AI UPSKILLING',
+  org:'AI 기반 IT 직무 전환 교육 · 38시간',status:'38시간',
+  sum:'생성형 AI · RAG · MCP · 바이브 코딩을 배우고 해커톤으로 이어졌습니다.',
+  pts:['생성형 AI · RAG · MCP','바이브 코딩으로 자연어 요구사항 기반 개발'],tags:['생성형 AI','RAG','MCP','바이브 코딩']},
+ {id:'fitbridge',kind:'proj',cat:'ai',x:7,z:-32,h:4.6,t:2026.53,date:'2026.07',title:'fitbridge',en:'AI HACKATHON',
+  org:'부산권 대학연합 AI 해커톤 · 4개 대학 연합 4인 팀',status:'우수상 · 동명대학교 총장상',
+  sum:'외국인 진로 맞춤 가이드 서비스. 4개 대학 학생이 모인 연합팀으로 해커톤에 참가해 우수상을 받았습니다.',
+  pts:['4개 대학 연합팀으로 서비스 기획 · 발표','AI 교육(생성형 AI · RAG · MCP · 바이브 코딩) 내용을 해커톤 결과물로 연결'],tags:['생성형 AI','RAG','바이브 코딩']},
+ {id:'duksan',kind:'proj',cat:'data',x:27,z:-16,h:4.8,t:2026.6,date:'2026.07 – 08',title:'덕산하이메탈 기업분석 입사지원서',en:'COMPANY ANALYSIS',
+  org:'「우리동네 청일강소」 공모전 · (사)벤처기업협회 · 고용노동부 주최',status:'공모전 대상 · 개인',
+  sum:'DART 공시 재무자료로 수익성과 사업부문을 분석해 Tableau로 시각화하고, 품질관리 직무 관점의 발전 방안을 제안했습니다.',
+  pts:['DART Open API로 공시 재무자료 수집 · 수익성 · 사업부문 분석','Tableau로 분석 결과 시각화','품질 데이터 기반 이상 조기경보 대시보드를 기업 발전 방안으로 제안'],tags:['DART Open API','Excel','Tableau','품질관리']},
+ {id:'fitout',kind:'proj',cat:'ship',x:25,z:8,h:5,t:2026.66,date:'2026.07 – 08',title:'FitOut Monitor',en:'OUTFITTING WAREHOUSE DASHBOARD',
+  org:'한화오션 DX 교육 · 데이터 시각화(C#) 프로젝트',status:'개발 전담 · 32일',img:'img/fitout.jpg',link:FITOUT_URL,
+  sum:'선박 의장자재의 입고 → 창고 보관 → 불출 현황을 한 프로그램에서 확인하도록 만든 창고관리 대시보드.',
+  pts:['Excel(BOM · 창고 · 입고 · 불출)을 데이터 소스로 연동','입고 완료 처리 시 재고 · Rack 위치 · 대시보드 자동 갱신','종합 대시보드 · 커스텀 차트 · KPI 근거 상세 팝업'],tags:['C#','WinForms','ClosedXML','GDI+']},
+ {id:'pipeguide',kind:'proj',cat:'ship',x:12,z:19,h:6.4,t:2026.85,date:'2026.10 – 11',title:'PipeGuide Digital Twin',en:'SHIP DESIGN CHANGE REVIEW · 3D',
+  org:'한화오션 Engineering / DX 교육 최종 프로젝트 · 팀',status:'UI/UX 설계 · 화면 개발',img:'img/pipeguide.jpg',link:PIPEGUIDE_URL,
+  sum:'P&ID 도면 분석 · 3D 모델 생성 · 배관 규격 변경 영향 검토 · 경로 개선 기능을 통합한 선박 설계 지원 시스템.',
+  pts:['분산된 기능을 ‘도면 분석 → 변경 영향 검토 → 경로 개선’ 3단계 업무 흐름으로 재설계','주요 탭 9개 → 5개 간소화 방향으로 UI 개편','마우스 안내 · 화면 강조 기반 인터랙티브 튜토리얼 구현'],tags:['JavaScript','Three.js','HTML/CSS','GitHub']}
+];
+var N=S.length;
+
+var $=function(id){return document.getElementById(id);};
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var two=function(n){return ('0'+n).slice(-2);};
+
+/* ───────── HUD 구성 ───────── */
+$('sN').textContent=two(N); $('sP').textContent=two(S.filter(function(s){return s.kind==='proj';}).length);
+var filter=null;
+Object.keys(CAT).forEach(function(k){ var b=document.createElement('button'); b.type='button'; b.style.setProperty('--c',CAT[k].c); b.innerHTML='<i></i>'+esc(CAT[k].n);
+  b.addEventListener('click',function(){ var on=!b.classList.contains('on'); document.querySelectorAll('#lg button').forEach(function(x){x.classList.remove('on');}); filter=on?k:null; if(on){ b.classList.add('on'); var i=S.findIndex(function(s){return s.cat===k&&s.kind==='proj';}); if(i<0) i=S.findIndex(function(s){return s.cat===k;}); focus(i,true); } });
+  $('lg').appendChild(b); });
+var T0=2020, T1=2027, tks=[];
+function tx(t){ return ((t-T0)/(T1-T0))*100; }
+// 2020~2024는 압축 (여정이 몰린 2025~26을 넓게)
+function warp(t){ var a=t<2024?(t-2020)/4*0.16:(t<2025.5?0.16+(t-2024)/1.5*0.2:0.36+(t-2025.5)/1.5*0.64); return Math.max(0,Math.min(1,a))*100; }
+[2020,2024,2025,2026].forEach(function(y){ var s=document.createElement('span'); s.textContent=y; s.style.left=warp(y+(y===2020?0.05:0))+'%'; $('yrs').appendChild(s); });
+S.forEach(function(s,i){ var b=document.createElement('button'); b.type='button'; b.className='tk'+(s.kind==='proj'?' p':''); b.style.left=warp(s.t)+'%'; b.style.setProperty('--c',CAT[s.cat].c); b.setAttribute('aria-label',s.date+' '+s.title); b.title=s.title;
+  b.addEventListener('click',function(){ focus(i,true); }); $('track').appendChild(b); tks.push(b); });
+
+/* 라벨 */
+var lbls=S.map(function(s,i){ var b=document.createElement('button'); b.type='button'; b.className='lbl'+(s.kind==='proj'?'':' minor'); b.style.setProperty('--c',CAT[s.cat].c);
+  b.innerHTML='<span class="y">'+esc(s.date.split(' ')[0])+'</span><span class="t">'+esc(s.title)+'</span>'; b.addEventListener('click',function(){ focus(i,true); });
+  $('labels').appendChild(b); return b; });
+
+/* 패널 */
+function scramble(el,txt){ if(reduce){el.textContent=txt;return;} clearInterval(el._s); var f=0,L=txt.length,ch='▓▒░<>/\\_-=+#';
+  el._s=setInterval(function(){ f++; var o=''; for(var k=0;k<L;k++) o+= k<f*0.8?txt[k]:(txt[k]===' '?' ':ch[Math.floor(Math.random()*ch.length)]); el.textContent=o; if(f*0.8>=L){clearInterval(el._s); el.textContent=txt;} },26); }
+function openSpot(i){
+  var s=S[i], c=CAT[s.cat].c, p=$('panel'); p.style.setProperty('--c',c);
+  $('pbody').innerHTML='<div class="eb">'+two(i+1)+' / '+two(N)+' · '+esc(s.kind==='proj'?'PROJECT':'EXPERIENCE')+' · '+esc(s.en)+'</div>'+
+    '<h2 id="ph"></h2><div class="org">'+esc(s.org)+'</div>'+
+    (s.img?'<div class="shot"><img src="'+s.img+'" alt="'+esc(s.title)+' 실제 화면"></div>':'')+
+    '<div class="chips"><span class="chip st">'+esc(s.status)+'</span><span class="chip">'+esc(CAT[s.cat].n)+'</span><span class="chip">'+esc(s.date)+'</span></div>'+
+    '<h3>OVERVIEW</h3><p class="b">'+esc(s.sum)+'</p><h3>'+(s.kind==='proj'?'WHAT I DID':'HIGHLIGHTS')+'</h3><ul>'+s.pts.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul>'+
+    '<div class="chips">'+s.tags.map(function(t){return '<span class="chip">'+esc(t)+'</span>';}).join('')+'</div>'+
+    (s.link?'<a class="go" href="'+s.link+'" target="_blank" rel="noopener">'+esc(s.title)+' 포트폴리오 열기 ↗</a>':'')+
+    '<div class="nav2"><button type="button" class="btn" id="pPrev">← PREV</button><button type="button" class="btn" id="pNext">NEXT →</button></div>';
+  scramble($('ph'),s.title);
+  $('pPrev').onclick=function(){ focus(Math.max(0,i-1),true); }; $('pNext').onclick=function(){ focus(Math.min(N-1,i+1),true); };
+  p.classList.add('open'); p.setAttribute('aria-hidden','false');
+}
+function openContact(){ var p=$('panel'); p.style.setProperty('--c','#3ff5d6');
+  $('pbody').innerHTML='<div class="eb">CONTACT</div><h2>최현서</h2><div class="org">동의대학교 신소재공학부(전기전자소재공학) 졸업 · 부산<br>반도체 공정 · 품질 데이터 분석 · 제조 DX</div>'+
+   '<h3>EMAIL</h3><div class="mail"><code id="em">chlgustj01@naver.com</code><button type="button" class="btn" id="cp">COPY</button></div>'+
+   '<h3>CERTIFICATES</h3><p class="b">ADsP · DSAC 데이터 사이언티스트 M2 · 6시그마 Green Belt · 미니탭활용능력 3급 · 컴퓨터활용능력 2급 · GTQ 1급 · OPIc IH</p>'+
+   '<h3>SKILLS</h3><p class="b">Minitab · Excel · t-test · 회귀분석 · DOE · 관리도 · 6σ · Tableau · DART Open API · C# · WinForms · JavaScript · Three.js · AVEVA Marine · CAD/CAM</p>';
+  $('cp').onclick=function(){ var em=$('em'), cp=this; function sel(){ var r=document.createRange(); r.selectNodeContents(em); var g=getSelection(); g.removeAllRanges(); g.addRange(r); cp.textContent='SELECTED'; }
+    try{ navigator.clipboard.writeText(em.textContent).then(function(){ cp.textContent='COPIED'; },sel); }catch(e){ sel(); } };
+  p.classList.add('open'); p.setAttribute('aria-hidden','false'); }
+function openWork(){ var p=$('panel'); p.style.setProperty('--c','#3ff5d6');
+  $('pbody').innerHTML='<div class="eb">WORK · '+two(N)+' SPOTS</div><h2>걸어온 길</h2><div class="org">항목을 누르면 지도가 그 스팟으로 이동합니다.</div><h3>JOURNEY</h3><div style="display:grid;gap:6px" id="wl"></div>';
+  S.forEach(function(s,i){ var b=document.createElement('button'); b.type='button'; b.className='btn'; b.style.cssText='justify-content:flex-start;text-align:left;border-color:'+CAT[s.cat].c+'55';
+    b.innerHTML='<span style="color:'+CAT[s.cat].c+'">'+(s.kind==='proj'?'◆':'○')+' '+esc(s.date.split(' ')[0])+'</span><span style="color:var(--text);letter-spacing:0;font-family:var(--f-body)">'+esc(s.title)+'</span>';
+    b.onclick=function(){ focus(i,true); }; $('wl').appendChild(b); });
+  p.classList.add('open'); p.setAttribute('aria-hidden','false'); }
+function closePanel(){ var p=$('panel'); p.classList.remove('open'); p.setAttribute('aria-hidden','true'); $('bWork').classList.remove('on'); $('bContact').classList.remove('on'); }
+$('px').addEventListener('click',closePanel);
+$('bWork').addEventListener('click',function(){ var on=!this.classList.contains('on'); closePanel(); if(on){ this.classList.add('on'); openWork(); } });
+$('bContact').addEventListener('click',function(){ var on=!this.classList.contains('on'); closePanel(); if(on){ this.classList.add('on'); openContact(); } });
+addEventListener('keydown',function(e){ if(e.key==='Escape') closePanel(); });
+
+/* 부팅 시퀀스 */
+var bootLines=['> INIT TERRITORY MAP ...','> LOAD TERRAIN · CONTOUR 0.6m','> PLOT '+two(N)+' SPOTS · 2020 → 2026','> TRACE WANDER PATH','> 헤맨 만큼 내 땅이다'];
+(function(){ var el=$('bootT'), k=0; if(reduce){ el.textContent=bootLines.join('\n'); setTimeout(function(){$('boot').classList.add('done');},300); return; }
+  var iv=setInterval(function(){ el.textContent=bootLines.slice(0,++k).join('\n'); if(k>=bootLines.length){ clearInterval(iv); setTimeout(function(){$('boot').classList.add('done');},350); } },170); })();
+
+/* ───────── 3D ───────── */
+var canvas=$('gl'), renderer;
+try{ renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,powerPreference:'high-performance'}); }catch(e){ renderer=null; }
+if(!renderer||typeof THREE==='undefined'){ $('nogl').style.display='grid'; window.focusSpot=openSpot; return; }
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.75));
+var scene=new THREE.Scene(); scene.background=new THREE.Color(0x02070a); scene.fog=new THREE.FogExp2(0x02070a,0.011);
+var camera=new THREE.PerspectiveCamera(42,1,0.1,400);
+
+/* 지형 높이 */
+function hash(x,y){ var s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); }
+function vnoise(x,y){ var ix=Math.floor(x), iy=Math.floor(y), fx=x-ix, fy=y-iy; var a=hash(ix,iy),b=hash(ix+1,iy),c=hash(ix,iy+1),d=hash(ix+1,iy+1); var ux=fx*fx*(3-2*fx), uy=fy*fy*(3-2*fy); return a+(b-a)*ux+(c-a)*uy+(a-b-c+d)*ux*uy; }
+function fbm(x,y){ var v=0,a=.5,f=1; for(var o=0;o<5;o++){ v+=a*vnoise(x*f,y*f); f*=2.03; a*=.5; } return v; }
+function height(x,z){ var h=(fbm(x*0.045+3.1,z*0.045+7.7)-0.45)*4.2;
+  for(var i=0;i<N;i++){ var s=S[i], dx=x-s.x, dz=z-s.z, r=s.kind==='proj'?7.5:5; h+=s.h*Math.exp(-(dx*dx+dz*dz)/(2*r*r)); }
+  var d=Math.hypot(x,z); h*=1-Math.min(1,Math.max(0,(d-52)/18)); return h; }
+S.forEach(function(s){ s.y=height(s.x,s.z); });
+
+var SIZE=150, SEG=320;
+var tg=new THREE.PlaneGeometry(SIZE,SIZE,SEG,SEG); tg.rotateX(-Math.PI/2);
+var tp=tg.attributes.position; for(var v=0;v<tp.count;v++){ tp.setY(v,height(tp.getX(v),tp.getZ(v))); } tg.computeVertexNormals();
+var spotU=[]; for(var i=0;i<N;i++) spotU.push(new THREE.Vector4(S[i].x,S[i].z,0,0));
+var TU={uTime:{value:0},uSpots:{value:spotU},uActive:{value:new THREE.Vector3(0,0,-1)},uPulse:{value:0},uHover:{value:new THREE.Vector2(999,999)}};
+var terrainMat=new THREE.ShaderMaterial({uniforms:TU,extensions:{derivatives:true},transparent:true,depthWrite:true,
+  vertexShader:'varying float vH;varying vec2 vXZ;varying float vD;void main(){vH=position.y;vXZ=position.xz;vec4 mv=modelViewMatrix*vec4(position,1.);vD=-mv.z;gl_Position=projectionMatrix*mv;}',
+  fragmentShader:[
+   'uniform float uTime;uniform vec4 uSpots['+N+'];uniform vec3 uActive;uniform float uPulse;uniform vec2 uHover;varying float vH;varying vec2 vXZ;varying float vD;',
+   'float lineAt(float v,float w){float f=abs(fract(v)-.5);float d=fwidth(v);return 1.-smoothstep(0.,d*w,f-.5+d*w*0.5+0.0);}',
+   'float iso(float v,float w){float g=abs(fract(v-.5)-.5)/fwidth(v);return 1.-min(g/w,1.);}',
+   'void main(){',
+   ' float claim=0.;for(int i=0;i<'+N+';i++){vec4 s=uSpots[i];float d=distance(vXZ,s.xy);claim=max(claim,smoothstep(s.z,s.z*.35,d)*step(.001,s.z));}',
+   ' float minor=iso(vH*1.6,1.1);float major=iso(vH*0.32,1.6);',
+   ' float grid=max(iso(vXZ.x/6.,.8),iso(vXZ.y/6.,.8))*.35;',
+   ' vec3 base=vec3(.10,.55,.50);vec3 hot=vec3(.25,.96,.84);vec3 peak=vec3(.55,1.,.95);',
+   ' float hi=smoothstep(1.5,6.5,vH);',
+   ' vec3 col=mix(base,hot,claim);col=mix(col,peak,hi*claim*.6);',
+   ' float a=minor*(.2+.5*claim)+major*(.38+.62*claim)+grid*(.3+.3*claim);',
+   ' float ad=distance(vXZ,uActive.xy);float ring=exp(-abs(ad-uPulse)*1.2)*step(0.,uActive.z)*(1.-smoothstep(10.,26.,uPulse));a+=ring*.9;col=mix(col,vec3(.8,1.,.97),ring*.6);',
+   ' float hv=distance(vXZ,uHover);a+=(1.-smoothstep(0.,2.4,hv))*.35;',
+   ' float fill=.035+.07*claim;',
+   ' float fade=1.-smoothstep(55.,72.,length(vXZ));',
+   ' gl_FragColor=vec4(col*(a+fill*2.),(a+fill)*fade);',
+   '}'].join('\n')});
+var terrain=new THREE.Mesh(tg,terrainMat); scene.add(terrain);
+// 바닥 아래 은은한 빛 (홀로그램 테이블)
+var under=new THREE.Mesh(new THREE.CircleGeometry(70,64),new THREE.MeshBasicMaterial({color:0x0b3a36,transparent:true,opacity:.18})); under.rotation.x=-Math.PI/2; under.position.y=-2.4; scene.add(under);
+
+/* 떠다니는 데이터 입자 */
+(function(){ var n=1400, g=new THREE.BufferGeometry(), p=new Float32Array(n*3); for(var k=0;k<n;k++){ var a=Math.random()*6.28, r=Math.sqrt(Math.random())*70; p[k*3]=Math.cos(a)*r; p[k*3+1]=Math.random()*26+1; p[k*3+2]=Math.sin(a)*r; }
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  var m=new THREE.PointsMaterial({color:0x7ffff0,size:.16,transparent:true,opacity:.55,blending:THREE.AdditiveBlending,depthWrite:false}); var pts=new THREE.Points(g,m); scene.add(pts); window.__dust=pts; })();
+
+/* 스팟: 빔 + 핀 + 링 */
+function tex(w,h,draw){ var c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); return new THREE.CanvasTexture(c); }
+var beamTex=tex(4,128,function(g,w,h){ var gr=g.createLinearGradient(0,h,0,0); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.4,'rgba(255,255,255,.35)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,w,h); });
+function pinTex(col,diamond){ return tex(128,160,function(g){ g.shadowColor=col; g.shadowBlur=22; g.fillStyle=col;
+  if(diamond){ g.beginPath(); g.moveTo(64,20); g.lineTo(100,64); g.lineTo(64,108); g.lineTo(28,64); g.closePath(); g.fill(); g.shadowBlur=0; g.fillStyle='rgba(2,10,12,.85)'; g.beginPath(); g.moveTo(64,44); g.lineTo(82,64); g.lineTo(64,84); g.lineTo(46,64); g.closePath(); g.fill(); }
+  else { g.beginPath(); g.arc(64,56,34,Math.PI*0.82,Math.PI*2.18); g.lineTo(64,138); g.closePath(); g.fill(); g.shadowBlur=0; g.fillStyle='rgba(2,10,12,.85)'; g.beginPath(); g.arc(64,56,15,0,7); g.fill(); g.fillStyle='#fff'; g.beginPath(); g.arc(64,56,6,0,7); g.fill(); } }); }
+var ringGeo=new THREE.RingGeometry(0.9,1.05,48); ringGeo.rotateX(-Math.PI/2);
+var spots=S.map(function(s,i){
+  var col=new THREE.Color(CAT[s.cat].c), big=s.kind==='proj', g=new THREE.Group(); g.position.set(s.x,s.y,s.z); scene.add(g);
+  var bh=big?9:5;
+  var beam=new THREE.Mesh(new THREE.PlaneGeometry(big?.32:.18,bh),new THREE.MeshBasicMaterial({map:beamTex,color:col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));
+  beam.position.y=bh/2; g.add(beam); var beam2=beam.clone(); beam2.rotation.y=Math.PI/2; g.add(beam2);
+  var pin=new THREE.Sprite(new THREE.SpriteMaterial({map:pinTex(CAT[s.cat].c,!big),transparent:true,depthWrite:false}));
+  var ps=big?3:1.8; pin.scale.set(ps,ps*1.25,1); pin.position.y=(big?3.1:2.1); g.add(pin);
+  var rings=[]; for(var k=0;k<3;k++){ var r=new THREE.Mesh(ringGeo,new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.6,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide})); r.position.y=0.08; g.add(r); rings.push(r); }
+  var hit=new THREE.Mesh(new THREE.SphereGeometry(big?2.2:1.6,8,8),new THREE.MeshBasicMaterial({visible:false})); hit.position.y=1.6; hit.userData.i=i; g.add(hit);
+  return {g:g,pin:pin,rings:rings,beam:[beam,beam2],hit:hit,big:big,col:col,ps:ps};
+});
+
+/* 여정 경로: 지형 위를 따라 그려지는 점선 */
+var pathPts=[]; for(var i2=0;i2<N-1;i2++){ var a=S[i2], b=S[i2+1]; for(var k2=0;k2<24;k2++){ var t=k2/24, x=a.x+(b.x-a.x)*t + Math.sin(t*Math.PI)*(i2%2?3:-3)*0.6, z=a.z+(b.z-a.z)*t + Math.sin(t*Math.PI*2)*1.2; pathPts.push(new THREE.Vector3(x,height(x,z)+0.25,z)); } }
+pathPts.push(new THREE.Vector3(S[N-1].x,S[N-1].y+0.25,S[N-1].z));
+var pathCurve=new THREE.CatmullRomCurve3(pathPts);
+var pathU={uTime:TU.uTime,uProg:{value:0}};
+var pathMesh=new THREE.Mesh(new THREE.TubeGeometry(pathCurve,900,0.09,6,false),new THREE.ShaderMaterial({uniforms:pathU,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:'uniform float uTime;uniform float uProg;varying vec2 vUv;void main(){if(vUv.x>uProg)discard;float dash=step(.45,fract(vUv.x*180.-uTime*1.5));float head=smoothstep(uProg-.02,uProg,vUv.x);vec3 c=mix(vec3(1.,.72,.35),vec3(1.,.95,.8),head);gl_FragColor=vec4(c,(.35+.65*dash)*.95+head);}'}));
+scene.add(pathMesh);
+var walker=new THREE.Mesh(new THREE.SphereGeometry(.28,12,12),new THREE.MeshBasicMaterial({color:0xfff2d0})); scene.add(walker);
+var walkerGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:tex(64,64,function(g){ var r=g.createRadialGradient(32,32,0,32,32,32); r.addColorStop(0,'rgba(255,220,160,1)'); r.addColorStop(1,'rgba(255,180,90,0)'); g.fillStyle=r; g.fillRect(0,0,64,64); }),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false})); walkerGlow.scale.set(2.4,2.4,1); scene.add(walkerGlow);
+var spotT=S.map(function(s){ var best=0,bd=1e9; for(var k=0;k<=400;k++){ var p=pathCurve.getPointAt(k/400); var d=(p.x-s.x)*(p.x-s.x)+(p.z-s.z)*(p.z-s.z); if(d<bd){bd=d;best=k/400;} } return best; });
+
+/* ───────── 카메라 ───────── */
+var OV={t:new THREE.Vector3(0,0,-2),dist:118,pol:.98,az:.3};
+var cam={t:OV.t.clone(),dist:OV.dist,pol:OV.pol,az:OV.az}, goal={t:OV.t.clone(),dist:OV.dist,pol:OV.pol,az:OV.az};
+var cur=-1, mx=0, my=0;
+function focus(i,open){ if(i<0||i>=N) return; cur=i; var s=S[i];
+  goal.t.set(s.x,s.y+1.5,s.z); goal.dist=s.kind==='proj'?30:26; goal.pol=1.02; goal.az=Math.atan2(s.x,s.z)*0.25+0.3;
+  TU.uActive.value.set(s.x,s.z,1); TU.uPulse.value=0;
+  tks.forEach(function(b,k){ b.classList.toggle('on',k===i); }); lbls.forEach(function(b,k){ b.classList.toggle('on',k===i); });
+  $('tlIdx').textContent=two(i+1)+' / '+two(N); scramble($('tlName'),s.date+' · '+s.title);
+  $('prog').style.width=warp(s.t)+'%';
+  if(open) openSpot(i); }
+function overview(){ cur=-1; goal.t.copy(OV.t); goal.dist=OV.dist; goal.pol=OV.pol; goal.az=OV.az; TU.uActive.value.z=-1; closePanel();
+  tks.forEach(function(b){b.classList.remove('on');}); lbls.forEach(function(b){b.classList.remove('on');}); $('tlIdx').textContent='00 / '+two(N); $('tlName').textContent='SCROLL TO WANDER ↓'; $('prog').style.width='100%'; }
+$('bOv').addEventListener('click',overview);
+window.focusSpot=function(i){ focus(i,true); };
+
+/* 입력: 휠 = 여정 따라 한 칸씩, 드래그 = 회전 */
+var wheelAcc=0, wheelT=null;
+addEventListener('wheel',function(e){ if(e.target.closest&&e.target.closest('.panel')) return; e.preventDefault(); wheelAcc+=e.deltaY; clearTimeout(wheelT);
+  wheelT=setTimeout(function(){ if(Math.abs(wheelAcc)>8){ var d=wheelAcc>0?1:-1; var n=cur<0?(d>0?0:N-1):Math.max(0,Math.min(N-1,cur+d)); focus(n,true); } wheelAcc=0; },90); },{passive:false});
+addEventListener('keydown',function(e){ if(e.key==='ArrowRight'||e.key==='ArrowDown'){ e.preventDefault(); focus(cur<0?0:Math.min(N-1,cur+1),true); } if(e.key==='ArrowLeft'||e.key==='ArrowUp'){ e.preventDefault(); focus(cur<0?N-1:Math.max(0,cur-1),true); } });
+var drag=null, ray=new THREE.Raycaster(), ndc=new THREE.Vector2(9,9), hov=-1;
+canvas.addEventListener('pointerdown',function(e){ drag={x:e.clientX,y:e.clientY,az:goal.az,pol:goal.pol,moved:false}; });
+addEventListener('pointermove',function(e){ ndc.x=e.clientX/innerWidth*2-1; ndc.y=-(e.clientY/innerHeight)*2+1; mx=ndc.x; my=ndc.y;
+  if(drag){ var dx=e.clientX-drag.x, dy=e.clientY-drag.y; if(Math.abs(dx)+Math.abs(dy)>6) drag.moved=true; if(drag.moved){ goal.az=drag.az-dx*0.005; goal.pol=Math.max(.55,Math.min(1.3,drag.pol-dy*0.003)); } } });
+addEventListener('pointerup',function(e){ if(!drag) return; var d=drag; drag=null; if(d.moved||e.target!==canvas) return;
+  ray.setFromCamera(ndc,camera); var h=ray.intersectObjects(spots.map(function(s){return s.hit;}))[0]; if(h) focus(h.object.userData.i,true); });
+
+/* 레이더 */
+var rc=$('rad'), rg=rc.getContext('2d');
+function drawRadar(t){ var w=rc.width, h=rc.height, cx=w/2, cy=h/2, R=w/2-6, sc=R/62; rg.clearRect(0,0,w,h);
+  rg.strokeStyle='rgba(63,245,214,.18)'; rg.lineWidth=1; [1,.66,.33].forEach(function(f){ rg.beginPath(); rg.arc(cx,cy,R*f,0,7); rg.stroke(); }); rg.beginPath(); rg.moveTo(cx-R,cy); rg.lineTo(cx+R,cy); rg.moveTo(cx,cy-R); rg.lineTo(cx,cy+R); rg.stroke();
+  var sa=t*1.2; var gr=rg.createConicGradient?rg.createConicGradient(sa,cx,cy):null; if(gr){ gr.addColorStop(0,'rgba(63,245,214,.35)'); gr.addColorStop(.12,'rgba(63,245,214,0)'); gr.addColorStop(1,'rgba(63,245,214,0)'); rg.fillStyle=gr; rg.beginPath(); rg.arc(cx,cy,R,0,7); rg.fill(); }
+  rg.strokeStyle='rgba(255,200,120,.7)'; rg.lineWidth=1.5; rg.beginPath(); S.forEach(function(s,i){ var x=cx+s.x*sc, y=cy+s.z*sc; i?rg.lineTo(x,y):rg.moveTo(x,y); }); rg.stroke();
+  S.forEach(function(s,i){ rg.fillStyle=CAT[s.cat].c; var x=cx+s.x*sc, y=cy+s.z*sc, r=s.kind==='proj'?5:3; if(i===cur){ rg.shadowColor=CAT[s.cat].c; rg.shadowBlur=12; r+=2; } rg.beginPath(); rg.arc(x,y,r,0,7); rg.fill(); rg.shadowBlur=0; });
+  var vx=cx+cam.t.x*sc, vy=cy+cam.t.z*sc, a=-cam.az+Math.PI, fov=.5, L=cam.dist*sc*.55; rg.fillStyle='rgba(227,255,250,.12)'; rg.beginPath(); rg.moveTo(vx,vy); rg.arc(vx,vy,L,a-Math.PI/2-fov,a-Math.PI/2+fov); rg.closePath(); rg.fill(); }
+
+/* 크기 */
+function resize(){ var w=innerWidth,h=innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+addEventListener('resize',resize); resize();
+
+/* ───────── 루프 ───────── */
+var clock=new THREE.Clock(), tmp=new THREE.Vector3(), t0=performance.now(), hitPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0), hp=new THREE.Vector3();
+var narrow=function(){ return innerWidth<900; };
+function frame(){
+  var dt=Math.min(clock.getDelta(),.05), t=clock.elapsedTime; TU.uTime.value=t;
+  var since=(performance.now()-t0)/1000;
+  // 경로가 그려지며 영역이 밝아짐
+  var prog=reduce?1:Math.min(1,Math.max(0,(since-1.1)/6.5)); pathU.uProg.value=prog;
+  var claimed=0;
+  for(var i=0;i<N;i++){ var on=prog>=spotT[i]-0.002?1:0; var target=on*(S[i].kind==='proj'?15:10.5); var u=spotU[i]; u.z+=(target-u.z)*Math.min(1,dt*1.6); if(u.z>1) claimed+=u.z*u.z; }
+  $('sC').textContent=Math.min(99,Math.round(claimed*Math.PI/(Math.PI*58*58)*100*0.55))+'%';
+  var wp=pathCurve.getPointAt(prog<1?prog:((t*0.025)%1)); walker.position.copy(wp); walker.position.y+=0.2; walkerGlow.position.copy(walker.position);
+  // 활성 스팟 펄스
+  TU.uPulse.value+=dt*9; if(TU.uPulse.value>30) TU.uPulse.value=0;
+  // 카메라
+  var k=Math.min(1,dt*(reduce?20:2.4)); cam.t.lerp(goal.t,k); cam.dist+=(goal.dist-cam.dist)*k; cam.pol+=(goal.pol-cam.pol)*k; cam.az+=(goal.az-cam.az)*k;
+  if(!drag&&!reduce&&cur<0) goal.az+=dt*0.025;
+  var d=cam.dist*(narrow()?1.35:1), pol=cam.pol+(reduce?0:my*0.03), az=cam.az+(reduce?0:mx*0.05);
+  camera.position.set(cam.t.x+d*Math.sin(pol)*Math.sin(az),cam.t.y+d*Math.cos(pol),cam.t.z+d*Math.sin(pol)*Math.cos(az)); camera.lookAt(cam.t);
+  // 호버: 지형 좌표 · 스팟
+  ray.setFromCamera(ndc,camera); if(ray.ray.intersectPlane(hitPlane,hp)){ TU.uHover.value.set(hp.x,hp.z); $('coords').textContent='LAT '+(35.1+hp.z*0.001).toFixed(3)+' · LON '+(129.0+hp.x*0.001).toFixed(3)+' · ELV '+height(hp.x,hp.z).toFixed(1); }
+  var h=ray.intersectObjects(spots.map(function(s){return s.hit;}))[0]; var nh=h?h.object.userData.i:-1; if(nh!==hov){ hov=nh; canvas.style.cursor=hov>=0?'pointer':'crosshair'; }
+  // 스팟 애니메이션 + 라벨 위치
+  spots.forEach(function(sp,i){ var s=S[i], active=i===cur, hv=i===hov, dim=filter&&s.cat!==filter;
+    var ps=sp.ps*(active?1.35:(hv?1.18:1)); sp.pin.scale.x+=(ps-sp.pin.scale.x)*Math.min(1,dt*8); sp.pin.scale.y=sp.pin.scale.x*1.25;
+    sp.pin.position.y=(sp.big?3.1:2.1)+(reduce?0:Math.sin(t*2+i)*0.18); sp.pin.material.opacity=dim?.25:1;
+    sp.beam.forEach(function(b){ b.material.opacity=dim?.15:(active?1:.6); });
+    sp.rings.forEach(function(r,k2){ var ph=((t*0.6+k2/3)%1); var sc=(sp.big?1.2:.8)+ph*(active?5:3); r.scale.set(sc,1,sc); r.material.opacity=(1-ph)*(dim?.15:(active?.9:.5)); });
+    tmp.set(s.x,s.y+(sp.big?5:3.6),s.z); tmp.project(camera);
+    var L=lbls[i]; var vis=tmp.z<1&&Math.abs(tmp.x)<1.1&&Math.abs(tmp.y)<1.1;
+    if(vis){ L.style.display=''; L.style.transform='translate('+((tmp.x+1)/2*innerWidth)+'px,'+((1-tmp.y)/2*innerHeight)+'px) translate(-50%,-100%)'; L.classList.toggle('dim',!!dim); } else L.style.display='none';
+  });
+  if(window.__dust) window.__dust.rotation.y=t*0.008;
+  renderer.render(scene,camera); drawRadar(t);
+  requestAnimationFrame(frame);
+}
+$('prog').style.width='100%'; $('tlIdx').textContent='00 / '+two(N);
+frame();
+})();
+</script>
