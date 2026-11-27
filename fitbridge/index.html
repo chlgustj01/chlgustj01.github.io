@@ -1,0 +1,735 @@
+<title>FitBridge V2 · 최현서</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Playfair+Display:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Warm Editorial × Mobile Product Showcase — 따뜻한 베이지 바탕, 고동색 스마트폰 프레임, 섹션마다 이미지·텍스트 배치를 바꿈 */
+:root{
+  --beige:#F5F0E6; --ivory:#FFFCF6; --sand:#E5D9C8; --sand-soft:#EFE7DA;
+  --choco:#3D2B23; --text:#3D2B23; --muted:#6F5E52; --terra:#A36C48; --olive:#747D61;
+  --red:#B0473A; --amber:#9A6B14;
+  --f-sans:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-brand:"Playfair Display",Georgia,serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{background:var(--beige);color:var(--text);font-family:var(--f-sans);font-size:1rem;line-height:1.75;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:anywhere}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--beige)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--terra);outline-offset:3px;border-radius:4px}
+h1,h2,h3{font-weight:800;line-height:1.3;margin:0;letter-spacing:-.02em;text-wrap:balance}
+p{margin:0}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.lbl{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--terra)}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:rgba(245,240,230,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--sand)}
+.nav .wrap{display:flex;align-items:center;gap:20px;height:58px}
+.brand{font-family:var(--f-brand);font-weight:700;font-size:1.0625rem;text-decoration:none;white-space:nowrap}
+.brand b{color:var(--terra);font-weight:700}
+.nav ul{list-style:none;margin:0 0 0 auto;padding:0;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.nav ul::-webkit-scrollbar{display:none}
+.nav ul a{display:block;padding:6px 11px;border-radius:999px;text-decoration:none;font-size:.875rem;color:var(--muted);white-space:nowrap}
+.nav ul a:hover{color:var(--text)}
+.nav ul a[aria-current="true"]{color:var(--ivory);background:var(--choco)}
+.home{font-size:.8125rem;color:var(--muted);text-decoration:none;white-space:nowrap}
+.home:hover{color:var(--terra)}
+@media (max-width:860px){.home{display:none}}
+
+/* phone frame */
+.phone{--w:340px;width:var(--w);max-width:100%;background:var(--choco);border-radius:calc(var(--w)*.13);padding:26px 10px 24px;position:relative;box-shadow:0 40px 60px -40px rgba(61,43,35,.55),0 2px 0 rgba(255,255,255,.08) inset}
+.phone::before{content:"";position:absolute;top:10px;left:50%;width:58px;height:7px;margin-left:-29px;border-radius:4px;background:#2B1E18;box-shadow:40px 0 0 -1px #2B1E18}
+.phone::after{content:"";position:absolute;bottom:9px;left:50%;width:84px;height:4px;margin-left:-42px;border-radius:2px;background:rgba(245,240,230,.45)}
+.screen{position:relative;border-radius:calc(var(--w)*.085);overflow:hidden;aspect-ratio:390/844;background:#F7F3EC}
+.screen.scroll{overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(61,43,35,.35) transparent;overscroll-behavior:contain}
+.canvas{position:relative;transition:opacity .22s ease}
+.canvas img{display:block;width:100%;height:auto}
+.canvas.fade{opacity:0}
+.mk{position:absolute;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;background:var(--terra);color:#fff;font-family:var(--f-mono);font-size:.75rem;display:grid;place-items:center;box-shadow:0 0 0 3px rgba(255,252,246,.95),0 4px 10px rgba(61,43,35,.3);z-index:2}
+.phone.before .mk{background:var(--muted)}
+.hl{position:absolute;border:2px solid var(--terra);border-radius:10px;box-shadow:0 0 0 9999px rgba(61,43,35,.28);transition:top .45s ease,left .45s ease,width .45s ease,height .45s ease,border-color .3s;pointer-events:none;z-index:2}
+.hl.red{border-color:#C25445} .hl.warn{border-color:#C89128} .hl.ok{border-color:var(--olive)}
+.hl[hidden]{display:none}
+
+/* hero */
+.hero{padding-block:64px 88px}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:72px;align-items:center}
+.hero .brandline{font-family:var(--f-brand);font-size:1.375rem;font-weight:700;color:var(--terra)}
+.hero h1{font-size:clamp(2.2rem,4.8vw,3.9rem);margin-top:14px;color:var(--choco)}
+.hero .sub{font-size:1.125rem;color:var(--muted);margin-top:18px}
+.hero .me{margin-top:28px;padding-left:16px;border-left:3px solid var(--terra);font-size:1.0625rem;font-weight:500;max-width:30em}
+.hero .me span{display:block;font-family:var(--f-mono);font-size:.6875rem;letter-spacing:.1em;color:var(--terra);font-weight:400}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin-top:40px;padding-top:24px;border-top:1px solid var(--sand)}
+.metric .v{font-size:clamp(2.2rem,4vw,3rem);font-weight:800;line-height:1;color:var(--terra);font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.metric .v small{font-size:.42em;margin-left:3px;font-weight:700}
+.metric .k{font-size:.9375rem;margin-top:10px}
+.cta{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:center;margin-top:36px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:999px;background:var(--choco);color:var(--ivory);text-decoration:none;font-weight:700;font-size:.9375rem}
+.btn:hover{background:var(--terra)}
+.cta small{font-size:.8125rem;color:var(--muted)}
+.hero .phone{--w:330px}
+.cap{font-size:.75rem;color:var(--muted);text-align:center;margin-top:14px}
+@media (max-width:920px){.hero .wrap{grid-template-columns:minmax(0,1fr);gap:48px}.hero .phone-col{justify-self:center}.hero .phone{--w:290px}}
+@media (max-width:620px){.metrics{grid-template-columns:minmax(0,1fr);gap:20px}.hero{padding-block:40px 64px}}
+
+/* sections */
+.sec{padding-block:104px}
+.sec.ivory{background:var(--ivory)}
+.sec.sand{background:var(--sand-soft)}
+.shead{max-width:46em;margin-bottom:52px}
+.shead h2{font-size:clamp(1.85rem,3.4vw,2.75rem);margin-top:10px;color:var(--choco)}
+.shead p{color:var(--muted);margin-top:12px;font-size:1.0625rem}
+@media (max-width:720px){.sec{padding-block:68px}.shead{margin-bottom:36px}}
+
+/* overview */
+.ov{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;align-items:start}
+.ov .lede{font-size:1.25rem;line-height:1.8}
+.found{list-style:none;margin:0;padding:0;counter-reset:f}
+.found li{counter-increment:f;border-top:1px solid var(--sand)}
+.found li:last-child{border-bottom:1px solid var(--sand)}
+.found a{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:18px 0;text-decoration:none}
+.found a::before{content:"0" counter(f);font-family:var(--f-mono);font-size:.8125rem;color:var(--terra)}
+.found b{font-weight:700;font-size:1.0625rem}
+.found span{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);white-space:nowrap}
+.found a:hover b{color:var(--terra)}
+@media (max-width:820px){.ov{grid-template-columns:minmax(0,1fr);gap:32px}}
+
+/* role */
+.vs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:0}
+.vs>div{padding:28px 36px 30px 0}
+.vs>div+div{padding-left:36px;border-left:1px solid var(--sand)}
+.vs .t{font-size:1.375rem;font-weight:800;margin-top:8px}
+.vs ul{margin:12px 0 0;padding-left:1.1em;display:grid;gap:4px}
+.vs .team{color:var(--muted)} .vs .team .t{color:var(--text)} .vs .team .lbl{color:var(--muted)}
+.vs .mine .lbl{color:var(--olive)}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin:48px 0 0;padding:0;list-style:none;counter-reset:s}
+.steps li{counter-increment:s;padding-right:20px;position:relative}
+.steps li::before{content:"0" counter(s);display:block;font-family:var(--f-mono);font-size:.75rem;color:var(--terra);padding-bottom:10px;margin-bottom:12px;border-bottom:2px solid var(--terra)}
+.steps li:not(:last-child)::after{content:"→";position:absolute;right:6px;top:-3px;color:var(--terra)}
+.steps b{display:block;font-size:1.0625rem}
+.steps p{font-size:.875rem;color:var(--muted);margin-top:4px}
+.tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 32px;margin-top:52px;padding-top:28px;border-top:1px solid var(--sand)}
+.tool b{display:block;font-size:.9375rem}
+.tool p{font-size:.875rem;color:var(--muted)}
+.more{margin-top:18px}
+.more summary{cursor:pointer;list-style:none;display:inline-flex;gap:8px;align-items:center;padding:10px 0;font-size:.875rem;font-weight:700;color:var(--terra)}
+.more summary::-webkit-details-marker{display:none}
+.more summary::before{content:"+";font-family:var(--f-mono)}
+.more[open] summary::before{content:"−"}
+.more .in{padding-bottom:12px;font-size:.875rem;color:var(--muted);display:grid;gap:6px;max-width:54em}
+.more .in b{color:var(--text)}
+@media (max-width:820px){.vs{grid-template-columns:minmax(0,1fr)}.vs>div{padding-right:0}.vs>div+div{padding-left:0;border-left:0;border-top:1px solid var(--sand)}.steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 0}.steps li:nth-child(2)::after{display:none}.tools{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.tools{grid-template-columns:minmax(0,1fr)}}
+
+/* cases */
+.case{padding-block:72px;border-top:1px solid var(--sand)}
+.case:first-of-type{border-top:0;padding-top:8px}
+.case h3{font-size:clamp(1.75rem,3.2vw,2.5rem);margin-top:10px;color:var(--choco)}
+.pd{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px 40px;margin-top:24px;max-width:62em}
+.pd dt{font-family:var(--f-mono);font-size:.6875rem;letter-spacing:.1em;color:var(--muted)}
+.pd dd{margin:4px 0 0}
+.res{list-style:none;margin:0;padding:0}
+.res li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:12px 0;border-bottom:1px solid var(--sand);font-size:.9375rem}
+.res li:first-child{border-top:2px solid var(--choco)}
+.res b{font-weight:800;color:var(--olive);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tech{margin-top:18px;font-size:.875rem;color:var(--muted)}
+.tech b{color:var(--text)}
+.note{font-size:.8125rem;color:var(--muted);margin-top:14px;padding-left:12px;border-left:2px solid var(--terra)}
+@media (max-width:720px){.pd{grid-template-columns:minmax(0,1fr)}}
+
+.c1{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:40px;align-items:start;margin-top:44px}
+.pcol{display:grid;gap:14px;justify-items:center}
+.pcol .phone{--w:280px}
+.pcol .tag{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.1em}
+.pcol.b .tag{color:var(--muted)} .pcol.a .tag{color:var(--olive)}
+.legend{list-style:none;margin:0;padding:0;display:grid;gap:4px;width:280px;max-width:100%}
+.legend button{width:100%;display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:center;text-align:left;font:inherit;font-size:.875rem;color:var(--text);background:none;border:0;border-radius:8px;padding:6px 8px;cursor:pointer}
+.legend button:hover,.legend button[aria-pressed="true"]{background:var(--sand-soft)}
+.legend i{width:20px;height:20px;border-radius:50%;background:var(--terra);color:#fff;font-style:normal;font-family:var(--f-mono);font-size:.6875rem;display:grid;place-items:center}
+.pcol.b .legend i{background:var(--muted)}
+.lenbars{margin-top:28px;display:grid;gap:10px}
+.lenbars .row{display:grid;grid-template-columns:60px minmax(0,1fr) 70px;gap:10px;align-items:center;font-size:.8125rem}
+.lenbars .rail{height:10px;border-radius:5px;background:var(--sand)}
+.lenbars .fill{height:100%;border-radius:5px}
+.lenbars .b .fill{background:#B9A996} .lenbars .a .fill{background:var(--olive)}
+.lenbars .v{font-family:var(--f-mono);text-align:right}
+.hint{font-size:.8125rem;color:var(--muted);margin-top:6px}
+@media (max-width:1080px){.c1{grid-template-columns:auto auto;justify-content:center}.c1>.side{grid-column:1/-1}}
+@media (max-width:640px){.c1{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.pcol .phone{--w:min(160px,42vw);padding:16px 6px 16px}.pcol .phone::before{top:6px;width:36px;margin-left:-18px;height:5px;box-shadow:none}.pcol .phone::after{bottom:6px;width:48px;margin-left:-24px;height:3px}.mk{width:18px;height:18px;font-size:.625rem}.legend{width:100%}.legend button{font-size:.75rem;padding:4px;grid-template-columns:18px minmax(0,1fr)}.legend i{width:16px;height:16px;font-size:.5625rem}}
+
+/* diagrams */
+.c2{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:56px;margin-top:44px;align-items:start}
+.pipe{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;counter-reset:p}
+.pipe div{position:relative;padding:18px 16px 18px 0;border-top:2px solid var(--choco)}
+.pipe div:not(:last-child)::after{content:"→";position:absolute;right:6px;top:14px;color:var(--terra);font-weight:700}
+.pipe b{display:block;font-size:1rem}
+.pipe span{display:block;font-size:.8125rem;color:var(--muted);margin-top:2px}
+.pipe em{display:inline-block;font-style:normal;font-family:var(--f-mono);font-size:.75rem;color:var(--olive);margin-top:8px}
+.states{display:flex;flex-wrap:wrap;gap:6px;margin-top:22px;align-items:center;font-size:.8125rem}
+.states span{padding:4px 11px;border-radius:999px;font-weight:500}
+.aux{display:grid;gap:12px}
+.aux figure{margin:0}
+.zoom{display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px var(--sand)}
+.zoom img{display:block;width:100%;height:auto}
+.aux figcaption{font-size:.875rem}
+.aux figcaption b{display:block}
+.lim{list-style:none;margin:16px 0 0;padding:0;font-size:.875rem}
+.lim li{padding:8px 0;border-top:1px solid var(--sand);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}
+.lim span{font-family:var(--f-mono);font-size:.6875rem;color:var(--red);white-space:nowrap}
+@media (max-width:900px){.c2{grid-template-columns:minmax(0,1fr);gap:36px}}
+@media (max-width:560px){.pipe{grid-template-columns:repeat(2,minmax(0,1fr))}.pipe div:nth-child(2)::after{display:none}}
+
+.flows{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;margin-top:44px}
+.flow{padding:24px;border-radius:16px;background:var(--beige)}
+.flow.after{background:#EEF0E6}
+.flow h4{margin:0 0 16px;font-family:var(--f-mono);font-size:.75rem;letter-spacing:.1em;font-weight:500;color:var(--muted)}
+.flow.after h4{color:var(--olive)}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.chain span{padding:8px 12px;border-radius:10px;background:var(--ivory);font-size:.875rem;box-shadow:0 0 0 1px var(--sand)}
+.chain span.x{background:#F6E3DF;box-shadow:0 0 0 1px #E8C3BC;color:var(--red);font-weight:700}
+.chain span.o{background:var(--ivory);box-shadow:0 0 0 1px var(--olive);color:var(--olive);font-weight:700}
+.chain i{font-style:normal;color:var(--terra)}
+.flow p{font-size:.875rem;color:var(--muted);margin-top:14px}
+.c3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;margin-top:40px;align-items:start}
+.qpair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.qpair figcaption{font-size:.8125rem;margin-top:6px;color:var(--muted)}
+@media (max-width:900px){.flows,.c3{grid-template-columns:minmax(0,1fr);gap:24px}}
+
+/* 반복 설명 도식 */
+.rep{display:grid;grid-template-columns:minmax(0,1.2fr) auto minmax(0,1fr);gap:12px;align-items:center;padding:20px;border-radius:14px;background:var(--beige)}
+.rep-menu{display:grid;gap:8px}
+.rep-menu div{padding:8px 10px;border-radius:8px;background:var(--ivory);box-shadow:0 0 0 1px var(--sand)}
+.rep-menu b{display:block;font-size:.875rem}
+.rep-menu span{display:block;font-size:.75rem;color:var(--red);background:#F6E3DF;border-radius:4px;padding:1px 5px;margin-top:3px}
+.rep-menu em{font-style:normal;font-size:.75rem;color:var(--muted)}
+.rep-arrow{color:var(--terra);font-weight:800;font-size:1.25rem}
+.rep-ai{padding:12px;border-radius:10px;background:var(--ivory);box-shadow:0 0 0 1px var(--olive);font-size:.8125rem}
+.rep-ai small{font-family:var(--f-mono);font-size:.6875rem;color:var(--olive)}
+.rep-ai p{margin-top:6px}
+.rep-ai b{display:block;font-size:.8125rem}
+.rep-ai i{display:block;font-style:normal;font-size:.75rem;color:var(--olive);margin-top:8px}
+@media (max-width:520px){.rep{grid-template-columns:minmax(0,1fr)}.rep-arrow{transform:rotate(90deg);justify-self:center}}
+
+/* experience: 입력 → 처리 → 결과 재현 시연 */
+.px{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:56px;align-items:start}
+.scn{font-size:.9375rem;color:var(--muted)}
+.scn b{color:var(--text)}
+.input{display:grid;grid-template-columns:110px minmax(0,1fr);gap:16px;align-items:center;margin:18px 0 26px;padding:14px;border-radius:14px;background:var(--ivory);box-shadow:0 0 0 1px var(--sand)}
+.input .zoom{box-shadow:0 0 0 1px var(--sand)}
+.input p{font-size:.875rem;color:var(--muted)}
+.input p b{display:block;color:var(--text);font-size:.9375rem}
+.flowlist{list-style:none;margin:0;padding:0;display:grid;gap:2px;counter-reset:n}
+.flowlist .grp{font-family:var(--f-mono);font-size:.6875rem;letter-spacing:.1em;color:var(--terra);padding:14px 12px 4px}
+.flowlist button{width:100%;display:grid;grid-template-columns:30px minmax(0,1fr);gap:6px;align-items:baseline;text-align:left;font:inherit;background:none;border:0;border-radius:10px;padding:9px 12px;cursor:pointer;color:var(--muted)}
+.flowlist button span{font-family:var(--f-mono);font-size:.75rem}
+.flowlist button b{font-weight:500;color:var(--text)}
+.flowlist button:hover{background:rgba(255,252,246,.65)}
+.flowlist button[aria-current="step"]{background:var(--ivory);box-shadow:0 0 0 1px var(--sand)}
+.flowlist button[aria-current="step"] span{color:var(--terra)}
+.flowlist button[aria-current="step"] b{font-weight:700}
+.stage{display:grid;justify-items:center;gap:12px;position:sticky;top:80px}
+.stage .phone{--w:360px}
+.say{width:360px;max-width:100%;min-height:3.1em;font-size:.9375rem;text-align:center;font-weight:500}
+.src{width:360px;max-width:100%;font-size:.75rem;color:var(--muted);text-align:center;min-height:2.6em}
+.src b{display:inline-block;font-family:var(--f-mono);font-size:.625rem;letter-spacing:.06em;padding:2px 7px;border-radius:4px;margin-right:6px;font-weight:500}
+.src b.app{background:#E8EBDD;color:var(--olive)} .src b.vis{background:#F4EAD2;color:var(--amber)} .src b.real{background:#F3E3D6;color:var(--terra)}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.ctrl button{font:inherit;font-size:.875rem;padding:9px 16px;border-radius:999px;border:1px solid var(--sand);background:var(--ivory);color:var(--text);cursor:pointer}
+.ctrl button:hover{border-color:var(--terra);color:var(--terra)}
+.ctrl button.auto{background:var(--choco);border-color:var(--choco);color:var(--ivory);font-weight:700}
+.ctrl button.auto:hover{background:var(--terra);border-color:var(--terra);color:var(--ivory)}
+.prog{width:360px;max-width:100%;height:3px;border-radius:2px;background:var(--sand);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--terra);transition:width .3s linear}
+.hot{position:absolute;z-index:3;cursor:pointer;border:0;background:transparent;border-radius:10px;padding:0}
+.hot:focus-visible{outline:2px solid var(--terra)}
+.hl.pulse{animation:hp 1.4s ease-in-out infinite}
+@keyframes hp{50%{box-shadow:0 0 0 9999px rgba(61,43,35,.28),0 0 0 6px rgba(163,108,72,.35)}}
+.hl b{position:absolute;left:-2px;bottom:calc(100% + 6px);white-space:nowrap;font-size:.75rem;font-weight:700;color:#fff;background:var(--terra);padding:3px 8px;border-radius:6px}
+.hl.red b{background:#C25445} .hl.warn b{background:#B4821F} .hl.ok b{background:var(--olive)}
+.hl.below b{bottom:auto;top:calc(100% + 6px)}
+.hl.right b{left:auto;right:-2px}
+.tap{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:2px solid var(--terra);z-index:4;pointer-events:none;opacity:0}
+.tap.on{animation:tap .7s ease-out}
+@keyframes tap{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(1.8)}}
+/* 분석 진행 시각화 */
+.ana{position:absolute;inset:0;z-index:2;pointer-events:none}
+.ana .veil{position:absolute;inset:0;background:rgba(61,43,35,.18)}
+.ana .bx{position:absolute;border:2px solid #C25445;border-radius:3px;background:rgba(194,84,69,.1);opacity:0;transform:scale(1.3);transition:opacity .25s,transform .25s}
+.ana .bx.pr{border-color:var(--olive);background:rgba(116,125,97,.14)}
+.ana .bx.on{opacity:1;transform:none}
+.ana .beam{position:absolute;left:9.2%;width:58.4%;height:6%;background:linear-gradient(180deg,transparent,rgba(163,108,72,.45),transparent);opacity:0}
+.ana.run .beam{animation:beam2 2s ease-in-out 2}
+@keyframes beam2{0%{opacity:1;top:19%}100%{opacity:1;top:55%}}
+.ana .card{position:absolute;left:4.6%;right:4.6%;top:73.5%;padding:3% 4%;border-radius:14px;background:var(--ivory);box-shadow:0 10px 30px -12px rgba(61,43,35,.45);font-size:clamp(.6875rem,2.9vw,.8125rem)}
+.ana .card small{display:block;font-family:var(--f-mono);font-size:.625rem;letter-spacing:.08em;color:var(--amber);margin-bottom:4px}
+.ana ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.ana li{display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:6px;align-items:center;color:#A89788}
+.ana li::before{content:"○";font-size:.75rem}
+.ana li.now{color:var(--text);font-weight:700}
+.ana li.now::before{content:"◐";color:var(--terra)}
+.ana li.done{color:var(--text)}
+.ana li.done::before{content:"✓";color:var(--olive);font-weight:800}
+.ana li em{font-style:normal;font-family:var(--f-mono);font-size:.625rem;color:var(--terra)}
+.ana .toast{position:absolute;left:50%;top:1.6%;transform:translateX(-50%);padding:1.6% 4%;border-radius:10px;background:#2C221C;color:#fff;font-size:clamp(.625rem,2.6vw,.8125rem);font-weight:700;white-space:nowrap}
+@media (max-width:960px){.px{grid-template-columns:minmax(0,1fr);gap:28px}.stage{position:static}.stage .phone{--w:min(340px,86vw)}.flowlist{grid-template-columns:repeat(3,minmax(0,1fr))}.flowlist .grp{grid-column:1/-1}}
+@media (max-width:520px){.flowlist{grid-template-columns:repeat(2,minmax(0,1fr))}.flowlist button{padding:8px;font-size:.8125rem}.input{grid-template-columns:84px minmax(0,1fr)}}
+
+/* results */
+.ver{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px}
+.ver h3{font-size:1.125rem;font-weight:800;margin-bottom:6px}
+.ver h3 small{display:block;font-family:var(--f-mono);font-size:.6875rem;letter-spacing:.08em;color:var(--muted);font-weight:400;margin-top:4px}
+.ver .res b{color:var(--terra)}
+@media (max-width:820px){.ver{grid-template-columns:minmax(0,1fr)}}
+.growth{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:64px;margin-top:80px;align-items:start}
+.growth blockquote{margin:0;font-size:clamp(1.5rem,2.8vw,2.125rem);font-weight:800;line-height:1.5;color:var(--choco);letter-spacing:-.02em}
+.growth blockquote em{font-style:normal;color:var(--terra)}
+.abil{list-style:none;margin:0;padding:0}
+.abil li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px 0;border-top:1px solid var(--sand);font-size:.9375rem}
+.abil a{font-family:var(--f-mono);font-size:.6875rem;color:var(--terra);text-decoration:none;white-space:nowrap}
+@media (max-width:820px){.growth{grid-template-columns:minmax(0,1fr);gap:28px;margin-top:56px}}
+
+footer{padding-block:32px 48px;border-top:1px solid var(--sand)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:10px 28px;justify-content:space-between;font-size:.8125rem;color:var(--muted)}
+footer code{font-family:var(--f-mono);font-size:.75rem;color:var(--text)}
+footer a{color:var(--terra)}
+
+.viewer{position:fixed;inset:0;z-index:100;background:rgba(61,43,35,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 56px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 20px) max(16px,env(safe-area-inset-left,0px))}
+.viewer img{max-width:min(1100px,100%);max-height:calc(100vh - 120px);object-fit:contain;border-radius:10px}
+.viewer p{color:var(--beige);font-size:.875rem}
+.viewer .x{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:max(16px,env(safe-area-inset-right,0px));width:40px;height:40px;border-radius:50%;border:0;background:var(--ivory);color:var(--choco);font-size:1rem;cursor:pointer}
+</style>
+
+<nav class="nav" aria-label="섹션 이동">
+  <div class="wrap">
+    <a class="brand" href="#top">FitBridge <b>V2</b></a>
+    <ul>
+      <li><a href="#overview">개요</a></li>
+      <li><a href="#role">나의 역할</a></li>
+      <li><a href="#cases">문제 해결</a></li>
+      <li><a href="#experience">서비스 체험</a></li>
+      <li><a href="#results">성과</a></li>
+    </ul>
+    <a class="home" id="homeLink" href="../">← 전체 포트폴리오</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <div class="brandline">FitBridge V2.</div>
+      <h1>낯선 여행지에서, 익숙하게 음식을 선택할 수 있도록.</h1>
+      <p class="sub">해커톤 이후 개인적으로 고도화한 외국인 관광객 대상 AI 음식 안내 서비스.</p>
+      <p class="me"><span>개인 수행</span>기존 서비스의 문제를 발견하고 데이터, 기능 및 사용자 경험을 개선했습니다.</p>
+      <div class="metrics">
+        <div class="metric"><div class="v">31.3<small>%</small></div><div class="k">분석 결과 화면 길이 감소</div></div>
+        <div class="metric"><div class="v">20<small>%</small></div><div class="k">메뉴 분석 클릭 수 감소</div></div>
+        <div class="metric"><div class="v">1<small>회 터치</small></div><div class="k">직원 질문 접근</div></div>
+      </div>
+      <div class="cta">
+        <a class="btn" href="https://github.com/chlgustj01/jeonpo-ai-v2" target="_blank" rel="noopener">GitHub 저장소 ↗</a>
+        <small>화면 지표는 같은 390px 화면 · 같은 AI 응답으로 개선 전후를 측정</small>
+      </div>
+    </div>
+    <div class="phone-col">
+      <div class="phone"><div class="screen"><div class="canvas"><img src="img/hero.jpg" alt="실제 메뉴판 분석 결과: 조개류 알레르기로 7개 음식 주의, 전복미역국 $26.99" width="390" height="844"></div></div></div>
+      <p class="cap">J Korean Restaurant 메뉴판 실제 분석 화면</p>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="sec ivory" id="overview">
+  <div class="wrap">
+    <div class="shead"><div class="lbl">01 · Project Overview</div><h2>다시 써 보니 보인 문제</h2></div>
+    <div class="ov">
+      <p class="lede">관광객이 한국 식당 메뉴판을 찍으면 메뉴를 번역하고, 내 알레르기·식단 기준과 비교해 주의할 음식을 알려 주는 서비스입니다. 해커톤이 끝난 뒤 실제 관광객의 순서대로 다시 사용해 보며 데모에서 보이지 않던 문제를 찾았습니다.</p>
+      <ol class="found">
+        <li><a href="#case-1"><b>기능은 많은데 서로 연결되지 않았다</b><span>CASE 01 →</span></a></li>
+        <li><a href="#case-2"><b>AI가 모르는 것을 ‘안전’처럼 보여 줄 수 있었다</b><span>CASE 02 →</span></a></li>
+        <li><a href="#case-3"><b>같은 사진을 반복해서 분석했다</b><span>CASE 03 →</span></a></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="role">
+  <div class="wrap">
+    <div class="shead"><div class="lbl">02 · My Role</div><h2>팀 작품을 혼자 다시 고쳤습니다</h2><p>신소재공학 전공으로, 웹 개발은 이 과정에서 필요한 만큼 배우며 진행했습니다.</p></div>
+    <div class="vs">
+      <div class="team"><div class="lbl">V1 · 해커톤</div><div class="t">4인 팀 프로젝트</div><ul><li>기획과 서비스 구조 설계 참여</li><li>동명대학교 총장 우수상 (팀 공동 수상)</li></ul></div>
+      <div class="mine"><div class="lbl">V2 · 개인 고도화</div><div class="t">문제 발견부터 검증까지 직접</div><ul><li>무엇을 고칠지, 완료 기준은 무엇인지 직접 정함</li><li>AI 개발 도구로 구현하고 결과를 검토 · 수정</li><li>바꾸기 전과 후를 같은 조건으로 측정</li></ul></div>
+    </div>
+    <ol class="steps">
+      <li><b>문제 발견</b><p>관광객 순서대로 화면을 눌러 보며 불편한 점을 기록</p></li>
+      <li><b>개선 설계</b><p>무엇을 바꾸고 무엇을 그대로 둘지 정리</p></li>
+      <li><b>기술 적용</b><p>필요한 기술을 배우며 AI 도구와 함께 구현</p></li>
+      <li><b>결과 검증</b><p>같은 조건으로 다시 측정하고 테스트로 고정</p></li>
+    </ol>
+    <div class="tools">
+      <div class="tool"><b>React · TypeScript</b><p>복잡한 화면과 코드 구조 정리</p></div>
+      <div class="tool"><b>Gemini API</b><p>메뉴판 사진 분석과 번역</p></div>
+      <div class="tool"><b>Zustand</b><p>여러 화면이 같은 정보를 보도록 연결</p></div>
+      <div class="tool"><b>Excel · Python</b><p>식품 데이터 정리와 자동 변환</p></div>
+      <div class="tool"><b>Playwright</b><p>실제 브라우저 행동 재현과 개선 효과 측정</p></div>
+      <div class="tool"><b>Claude Code · ChatGPT</b><p>AI와 협업한 구현</p></div>
+    </div>
+    <details class="more"><summary>기술 상세 보기</summary><div class="in">
+      <p><b>화면</b> Vite(빌드 · 코드 분할), Tailwind CSS, Leaflet 지도</p>
+      <p><b>서버</b> Node.js 서버 함수(API Key를 브라우저에 노출하지 않음), Exchange Rate API</p>
+      <p><b>개발 환경</b> VS Code, WSL Ubuntu, Git · GitHub(해커톤 원본과 개인 작업을 브랜치로 분리)</p>
+    </div></details>
+  </div>
+</section>
+
+<section class="sec ivory" id="cases">
+  <div class="wrap">
+    <div class="shead"><div class="lbl">03 · Problem Solving</div><h2>핵심 개선 사례 3가지</h2></div>
+
+    <article class="case" id="case-1">
+      <div class="lbl">Case 01 · 사용자 중심 설계</div>
+      <h3>복잡한 기능을 연결하다</h3>
+      <dl class="pd">
+        <div><dt>문제</dt><dd>어떤 음식이 위험한지 한눈에 보이지 않았고, 직원 질문은 화면 맨 아래에 있었습니다. 지도 · 메뉴 · 환율 · 리뷰도 따로 움직였습니다.</dd></div>
+        <div><dt>내가 바꾼 것</dt><dd>‘내가 고른 음식 하나’를 중심에 두고 위험 정보, 가격, 직원 질문, 리뷰가 함께 바뀌도록 화면을 다시 짰습니다.</dd></div>
+      </dl>
+      <div class="c1">
+        <div class="pcol b">
+          <span class="tag">BEFORE</span>
+          <div class="phone before"><div class="screen scroll" id="uxB" tabindex="0" aria-label="개선 전 결과 화면, 안에서 스크롤"><div class="canvas"><img src="img/ux-before.jpg" alt="개선 전 결과 화면 전체" width="390" height="3481">
+            <span class="mk" style="left:93%;top:8.3%">1</span><span class="mk" style="left:93%;top:13.6%">2</span><span class="mk" style="left:93%;top:86.6%">3</span></div></div></div>
+          <ul class="legend" data-for="uxB">
+            <li><button type="button" data-y="290"><i>1</i>경고는 배너 하나뿐</button></li>
+            <li><button type="button" data-y="475"><i>2</i>카드마다 긴 설명이 반복</button></li>
+            <li><button type="button" data-y="3013"><i>3</i>직원 질문은 맨 아래 (3,013px)</button></li>
+          </ul>
+        </div>
+        <div class="pcol a">
+          <span class="tag">AFTER</span>
+          <div class="phone"><div class="screen scroll" id="uxA" tabindex="0" aria-label="개선 후 결과 화면, 안에서 스크롤"><div class="canvas"><img src="img/ux-after.jpg" alt="개선 후 결과 화면 전체" width="390" height="2393">
+            <span class="mk" style="left:94%;top:16.1%">1</span><span class="mk" style="left:8%;top:21.9%">2</span><span class="mk" style="left:94%;top:31.6%">3</span><span class="mk" style="left:94%;top:54.5%">4</span></div></div></div>
+          <ul class="legend" data-for="uxA">
+            <li><button type="button" data-y="385"><i>1</i>“10개 중 9개 주의” 요약</button></li>
+            <li><button type="button" data-y="525"><i>2</i>음식별 위험도 표시</button></li>
+            <li><button type="button" data-y="756"><i>3</i>직원 질문 바로가기</button></li>
+            <li><button type="button" data-y="1310"><i>4</i>선택 음식 중심 상세 정보</button></li>
+          </ul>
+        </div>
+        <div class="side">
+          <ul class="res">
+            <li>결과 화면 길이<b>−31.3%</b></li>
+            <li>메뉴 분석까지 클릭<b>10 → 8회</b></li>
+            <li>직원 질문 접근<b>스크롤 → 1회 터치</b></li>
+            <li>음식별 위험도 표시<b>0 → 10/10</b></li>
+            <li>메뉴판 가격 자동 환산<b>환율 탭과 연결</b></li>
+          </ul>
+          <div class="lenbars" aria-label="결과 화면 전체 길이 비교">
+            <div class="row b"><span>BEFORE</span><div class="rail"><div class="fill" style="width:100%"></div></div><span class="v">3,481px</span></div>
+            <div class="row a"><span>AFTER</span><div class="rail"><div class="fill" style="width:68.7%"></div></div><span class="v">2,393px</span></div>
+          </div>
+          <p class="hint">두 화면은 같은 AI 응답(메뉴판 1장 → 음식 10개)을 390px 화면에서 재생한 것입니다. 휴대폰 안을 스크롤하거나 번호를 누르면 해당 위치로 이동합니다.</p>
+          <p class="tech"><b>React · Zustand</b>로 고른 음식 하나를 여러 화면이 함께 보게 했고, <b>Playwright</b>로 클릭과 스크롤을 측정했습니다.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="case" id="case-2">
+      <div class="lbl">Case 02 · 데이터 신뢰성</div>
+      <h3>AI의 불확실성을 관리하다</h3>
+      <dl class="pd">
+        <div><dt>문제</dt><dd>AI가 정보를 빠뜨려도 정상 데이터처럼 처리될 수 있었고, AI 추정을 보완할 식품 데이터가 없었습니다.</dd></div>
+        <div><dt>내가 바꾼 것</dt><dd>빠진 정보는 ‘알 수 없음’으로 따로 표시하고, 식품 · 알레르기 자료를 Excel DB로 정리해 Python으로 검증한 뒤 서비스에 연결했습니다.</dd></div>
+      </dl>
+      <div class="c2">
+        <div>
+          <div class="pipe" aria-label="식품 데이터 흐름">
+            <div><b>Excel DB</b><span>알레르겐 · 식재료 · 근거 문헌</span><em>11개 시트</em></div>
+            <div><b>Python 검증</b><span>규칙 검사 · 변환</span><em>테스트 31/31</em></div>
+            <div><b>JSON</b><span>검증 통과 데이터만</span><em>표준 알레르겐 21종</em></div>
+            <div><b>웹 화면</b><span>AI 추정과 문헌 근거를 나눠 표시</span><em>위험 상태 3 → 5종</em></div>
+          </div>
+          <div class="states" aria-label="위험 판단 5단계"><span class="muted" style="padding-left:0">위험 판단</span>
+            <span style="background:#F6E3DF;color:var(--red)">위험</span>
+            <span style="background:#F4EAD2;color:var(--amber)">확인 필요</span>
+            <span style="background:#E8EBDD;color:var(--olive)">일치 없음</span>
+            <span style="background:var(--sand-soft);color:var(--muted)">불확실</span>
+            <span style="background:var(--sand-soft);color:var(--muted)">오류</span>
+          </div>
+          <p class="note">AI 추정과 문헌 근거를 구분해 보여 주는 기능이며, 실제 음식의 섭취 안전성을 검증한 것은 아닙니다.</p>
+        </div>
+        <div class="aux">
+          <figure>
+            <div class="rep" aria-label="같은 설명문이 반복된 메뉴판을 다시 그린 도식">
+              <div class="rep-menu">
+                <div><b>김치찌개</b><span>국산 묵은지와 돼지고기가 들어간 칼칼한 김치찌개</span></div>
+                <div><b>된장찌개</b><span>국산 묵은지와 돼지고기가 들어간 칼칼한 김치찌개</span></div>
+                <div><b>오징어볶음</b><span>국산 묵은지와 돼지고기가 들어간 칼칼한 김치찌개</span></div>
+                <em>… 9개 메뉴 모두 같은 문구</em>
+              </div>
+              <div class="rep-arrow" aria-hidden="true">→</div>
+              <div class="rep-ai"><small>AI 결과</small><p><b>된장찌개</b>된장 · 두부 · 애호박</p><p><b>오징어볶음</b>오징어 · 고추장 · 고춧가루 · 마늘</p><i>설명문을 재료로 옮기지 않음 · AI 추정 표시</i></div>
+            </div>
+            <figcaption style="margin-top:10px"><b>보조 사례 · 원본 데이터의 품질 문제</b>한마음식당 메뉴판을 다시 그린 도식입니다. 같은 설명이 반복 인쇄돼 있었지만 AI는 그 문구를 재료로 옮기지 않았습니다.</figcaption>
+          </figure>
+          <ul class="lim" aria-label="실제 검증에서 발견한 분류 한계">
+            <li>들깨를 참깨로 분류<span>부정확 · 개선 예정</span></li>
+            <li>성게를 조개류로 분류<span>부정확 · 개선 예정</span></li>
+            <li>낙지를 오징어로 분류<span>부정확 · 개선 예정</span></li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <article class="case" id="case-3">
+      <div class="lbl">Case 03 · 시스템 효율화</div>
+      <h3>불필요한 반복을 제거하다</h3>
+      <dl class="pd">
+        <div><dt>문제</dt><dd>언어만 바꿔도 같은 사진을 다시 분석했고, 실제 검증 중에 AI 사용 한도 초과 오류가 났습니다.</dd></div>
+        <div><dt>내가 바꾼 것</dt><dd>사진 분석과 번역을 나누고 한 번 얻은 결과를 저장해 재사용했습니다. 하루 한도를 넘으면 쓸데없는 재시도를 멈추게 했습니다.</dd></div>
+      </dl>
+      <div class="flows">
+        <div class="flow"><h4>BEFORE · 언어를 바꾸면</h4>
+          <div class="chain"><span>언어 변경</span><i>→</i><span class="x">사진 분석 + 번역 다시</span><i>→</i><span>약 15초 대기</span></div>
+          <p>바꿀 때마다 같은 사진을 처음부터 다시 분석했습니다.</p></div>
+        <div class="flow after"><h4>AFTER · 언어를 바꾸면</h4>
+          <div class="chain"><span>언어 변경</span><i>→</i><span class="o">저장된 결과 재사용</span><i>→</i><span>번역만 1회</span></div>
+          <p>같은 사진은 서버 캐시가 2.1초에 응답하고, AI를 다시 부르지 않습니다.</p></div>
+      </div>
+      <div class="c3">
+        <ul class="res">
+          <li>언어 변경 시 사진 재분석<b>0회</b></li>
+          <li>같은 사진 캐시 응답<b>2.1초</b></li>
+          <li>캐시 적중 시 AI 추가 호출<b>0회</b></li>
+          <li>오류 대응 브라우저 테스트<b>20/20</b></li>
+        </ul>
+        <div>
+          <div class="qpair">
+            <figure style="margin:0"><button type="button" class="zoom" data-full="img/quota-daily.jpg" data-cap="하루 한도: 남은 시간을 안내하고 재시도 버튼은 숨김"><img src="img/quota-daily.jpg" alt="오늘 무료 분석 한도 도달 안내" width="345" height="585"></button><figcaption>하루 한도 · 남은 시간 안내</figcaption></figure>
+            <figure style="margin:0"><button type="button" class="zoom" data-full="img/quota-minute.jpg" data-cap="잠깐 몰린 요청: 잠시 후 다시 시도 버튼"><img src="img/quota-minute.jpg" alt="잠시 후 다시 시도 안내와 버튼" width="345" height="585"></button><figcaption>잠깐 몰린 요청 · 다시 시도</figcaption></figure>
+          </div>
+          <details class="more"><summary>기술 상세 보기</summary><div class="in">
+            <p>오류 원인은 기능 추가로 인한 과부하가 아니라 무료 등급의 하루 요청 한도였습니다.</p>
+            <p><b>캐시</b> 사진 내용의 SHA-256 값을 열쇠로 결과 저장(서버 메모리, 30분, 최대 200개)</p>
+            <p><b>한도 처리</b> 429 오류 내용으로 하루 · 분당 · 토큰 한도를 구분하고 Retry-After로 다시 시도할 시간을 계산. 하루 한도 이후 서버가 AI를 호출하지 않음(Mock 테스트로 확인)</p>
+          </div></details>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="sec sand" id="experience">
+  <div class="wrap">
+    <div class="shead"><div class="lbl">04 · Product Experience</div><h2>메뉴판 한 장으로 음식을 고르기까지</h2></div>
+    <div class="px">
+      <div>
+        <p class="scn"><b>조개류 알레르기가 있는 미국인 관광객</b>이 메뉴판을 찍어 음식을 고르는 과정입니다.</p>
+        <div class="input">
+          <button type="button" class="zoom" data-full="img/demo-menu.jpg" data-cap="시연용 메뉴판(자체 제작) · 실제 검증 메뉴판에서 분석된 10개 음식명과 가격으로 구성"><img src="img/demo-menu.jpg" alt="시연용 메뉴판: 알찌개 $24.99, 전복미역국 $26.99 등 10개 메뉴" width="1200" height="1680"></button>
+          <p><b>입력 · 시연용 메뉴판</b>실제 검증 메뉴판은 공개 권한이 없어, 그 검증에서 분석된 음식명과 가격으로 직접 만들었습니다.</p>
+        </div>
+        <ol class="flowlist" id="flowlist"></ol>
+      </div>
+      <div class="stage">
+        <div class="phone"><div class="screen scroll" id="pxScreen" tabindex="0" aria-label="서비스 화면, 안에서 스크롤"><div class="canvas" id="pxCanvas">
+          <img id="pxImg" src="img/jk-profile.jpg" alt="" width="390" height="1757">
+          <div class="ana" id="ana" hidden><div class="veil"></div><div class="beam"></div><div class="toast">Analyzing menu photo…</div>
+            <div class="card"><small>처리 과정 시각화</small><ol>
+              <li data-k="0">음식명 인식<em></em></li><li data-k="1">가격 · 통화 추출<em></em></li><li data-k="2">AI 식재료 추정<em></em></li><li data-k="3">내 프로필과 비교<em></em></li><li data-k="4">결과 화면 표시<em></em></li></ol></div></div>
+          <div class="hl" id="pxHl" hidden><b id="pxHlT"></b></div>
+          <button type="button" class="hot" id="pxHot" hidden></button>
+          <span class="tap" id="pxTap"></span>
+        </div></div></div>
+        <div class="prog" aria-hidden="true"><i id="pxProg"></i></div>
+        <p class="say" id="pxSay" aria-live="polite"></p>
+        <p class="src" id="pxSrc"></p>
+        <div class="ctrl">
+          <button type="button" id="pxPrev">◀ 이전</button>
+          <button type="button" class="auto" id="pxAuto">▶ 자동 시연 (약 35초)</button>
+          <button type="button" id="pxNext">다음 ▶</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="results">
+  <div class="wrap">
+    <div class="shead"><div class="lbl">05 · Results &amp; Growth</div><h2>검증한 것과 배운 것</h2></div>
+    <div class="ver">
+      <div>
+        <h3>실제 메뉴판 검증<small>실제 Gemini · 메뉴판마다 분석 1회</small></h3>
+        <ul class="res">
+          <li>J Korean · 반환 가격 일치<b>10/10</b></li>
+          <li>J Korean · 한글 음식명 정확 일치<b>9/10</b></li>
+          <li>J Korean · 메뉴 29개 중 분석<b>10개</b></li>
+          <li>한마음식당 · 음식명 · 가격 일치<b>10/10</b></li>
+          <li>통화 변경 시 AI 추가 호출 · 콘솔 오류<b>0 · 0</b></li>
+        </ul>
+      </div>
+      <div>
+        <h3>자동 테스트<small>Mock · 실제 API를 쓰지 않는 반복 테스트</small></h3>
+        <ul class="res">
+          <li>브라우저 자동화 테스트 (Playwright)<b>106 통과 · 2 skip</b></li>
+          <li>Python 데이터 테스트<b>31/31</b></li>
+          <li>같은 사진 서버 캐시 응답 (실제 서버)<b>2.1초</b></li>
+        </ul>
+      </div>
+    </div>
+    <details class="more"><summary>남은 한계와 추가 검증</summary><div class="in">
+      <p>사진 1장당 10개까지만 분석 · 저해상도 사진에서 한글 음식명 1개 오인식(두부짜글이 → 두부파글이) · 들깨 · 성게 · 낙지 알레르겐 분류 부정확 · 기울어진 실제 촬영 사진 · 휴대폰 실기기 · 음성 품질 미검증 · 공개 운영 시 API 비용과 요청 제한 관리 필요</p>
+    </div></details>
+    <div class="growth">
+      <blockquote>복잡한 데이터와 기능의 문제를 발견하고, <em>사용자 중심으로 재구성해</em>, 개선 효과를 검증하는 역량</blockquote>
+      <ul class="abil">
+        <li>기존 팀 프로젝트의 문제를 스스로 발견<a href="#overview">01</a></li>
+        <li>비전공자로서 필요한 기술과 AI 도구 활용<a href="#role">02</a></li>
+        <li>데이터와 기능을 연결해 해결<a href="#case-1">CASE 01 · 02</a></li>
+        <li>실제 사용자 흐름과 수치로 검증<a href="#experience">04 · 05</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>최현서 · FitBridge V2 · 2026.11.28</span>
+    <span><code>main</code> a91f46c 해커톤 팀 원본 · <code>v2-dev</code> 개인 고도화</span>
+    <span><a href="https://github.com/chlgustj01/jeonpo-ai-v2" target="_blank" rel="noopener">GitHub ↗</a> · <a id="homeLink2" href="../">전체 포트폴리오</a></span>
+  </div>
+</footer>
+
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="이미지 크게 보기"><button type="button" class="x" aria-label="닫기">✕</button><img alt=""><p></p></div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  if(!/github\.io$/.test(location.hostname)){ ['homeLink','homeLink2'].forEach(function(id){ var a=$(id); if(a){ a.href='https://claude.ai/artifact/EjTTZ8C43yF66PKtpZii4S'; a.target='_blank'; a.rel='noopener'; } }); }
+
+  // 현재 섹션 강조
+  var links=[].slice.call(document.querySelectorAll('.nav ul a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  function spy(){ var y=scrollY+120,cur=-1; secs.forEach(function(s,i){ if(s&&s.offsetTop<=y) cur=i; });
+    links.forEach(function(a,i){ if(i===cur) a.setAttribute('aria-current','true'); else a.removeAttribute('aria-current'); }); }
+  addEventListener('scroll',spy,{passive:true}); spy();
+
+  // 휴대폰 화면 안에서 원하는 위치로 스크롤 (y는 원본 이미지 px)
+  function scrollPhone(screen, y, H){ var ch=screen.querySelector('.canvas').offsetHeight; var t=y/H*ch-screen.clientHeight/2; screen.scrollTo({top:Math.max(0,t),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}); }
+
+  // CASE 01 번호 누르기
+  [].forEach.call(document.querySelectorAll('.legend'),function(ul){ var sc=$(ul.dataset.for), H=+sc.querySelector('img').getAttribute('height');
+    [].forEach.call(ul.querySelectorAll('button'),function(b){ b.addEventListener('click',function(){
+      [].forEach.call(ul.querySelectorAll('button'),function(x){ x.setAttribute('aria-pressed',x===b?'true':'false'); });
+      scrollPhone(sc,+b.dataset.y,H); }); }); });
+
+  // 04 서비스 체험: 입력 → 처리 → 결과 재현 (실제 Gemini 호출 없음)
+  var IM={profile:['img/jk-profile.jpg',390,1757],empty:['img/up-empty.jpg',390,844],preview:['img/up-preview.jpg',390,844],result:['img/jk-result.jpg',390,2782],jpy:['img/jk-jpy.jpg',390,844],ex:['img/jk-exchange.jpg',390,844]};
+  var SRC={app:'<b class="app">실제 앱 화면</b>같은 조건(조개류 · USA · Normal)을 다시 입력해 캡처',
+    up:'<b class="app">실제 앱 화면</b>시연용 메뉴판을 업로드한 화면 · AI 호출 없음',
+    vis:'<b class="vis">처리 과정 시각화</b>이해를 돕는 재현이며 실제 AI 내부 과정을 관찰한 것이 아님',
+    real:'<b class="real">기존 검증 결과로 재현</b>2026.11.28 실제 분석 1회의 결과 화면 · 새로운 분석 아님'};
+  var SC=[
+    {g:'입력',t:'프로필 설정',src:'app',seq:[
+      {img:'profile',b:[40,268,350,410],tag:'언어',s:'언어와 피해야 할 음식, 맵기, 국적을 정합니다.'},
+      {img:'profile',b:[199,752,341,810],tone:'red',tag:'조개류 선택',s:'표준 알레르겐 21종 중 조개류(Shellfish)를 고릅니다.'}]},
+    {g:'입력',t:'메뉴판 불러오기',src:'up',seq:[
+      {img:'empty',b:[34,500,356,544],tag:'Add a Menu Photo',hot:1,s:'메뉴판 사진을 찍거나 불러옵니다. 버튼을 눌러 보세요.'}]},
+    {g:'입력',t:'미리보기',src:'up',seq:[
+      {img:'preview',b:[80,166,310,488],tag:'시연용 메뉴판',s:'불러온 메뉴판이 잘리지 않고 그대로 보입니다.'}]},
+    {g:'처리',t:'Analyze 클릭',src:'up',seq:[
+      {img:'preview',b:[34,556,356,600],tag:'Scan Menu Here',hot:1,s:'분석 버튼을 누릅니다.'}]},
+    {g:'처리',t:'AI 분석 진행',src:'vis',ana:1,dur:7000,seq:[
+      {img:'preview',b:null,s:'음식명과 가격을 찾고, 재료를 추정해 내 프로필과 비교합니다.'}]},
+    {g:'결과',t:'음식명 · 가격 결과',src:'real',seq:[
+      {img:'result',b:[14,174,376,230],tone:'warn',tag:'분석 범위 안내',s:'사진 1장당 10개까지 분석하고 범위를 알려 줍니다.'},
+      {img:'result',b:[14,968,376,1360],tag:'음식명 · 메뉴판 가격',s:'영문 · 한글 음식명과 메뉴판에 적힌 가격이 그대로 나옵니다.'}]},
+    {g:'결과',t:'음식별 위험도',src:'real',seq:[
+      {img:'result',b:[14,314,376,494],tone:'red',tag:'10개 중 7개 주의',s:'내 프로필과 겹치는 음식을 먼저 요약합니다.'},
+      {img:'result',b:[14,1690,376,1892],tone:'red',tag:'Avoid · 조개류 (AI 추정)',s:'전복미역국은 조개류가 들어갔을 수 있어 ‘피하기’입니다.'},
+      {img:'result',b:[14,1352,376,1672],tone:'ok',tag:'No match ≠ 안전 보장',s:'겹치는 성분이 없어도 ‘안전’이라 하지 않습니다.'}]},
+    {g:'결과',t:'USD → JPY',src:'real',seq:[
+      {img:'result',b:[112,512,192,558],tag:'USD',hot:1,s:'통화를 USD에서 JPY로 바꿉니다.'},
+      {img:'jpy',b:[14,503,376,642],tag:'$26.99 ≈ ¥4,297',s:'10개 모두 바로 엔화로 환산됩니다. AI 추가 호출 0회 · 환율은 테스트 당시(11/27) 값.'},
+      {img:'ex',b:[20,185,372,335],tag:'환율 탭도 JPY',s:'환율 탭도 같은 통화와 같은 환율(100 JPY = 844 KRW)을 씁니다.'}]},
+    {g:'결과',t:'직원 질문',src:'real',seq:[
+      {img:'result',b:[38,1936,355,1990],tag:'이 음식만',s:'고른 음식에 대해 직원에게 물을 질문을 만듭니다.'},
+      {img:'result',b:[36,2086,355,2210],tag:'한국어 질문',s:'“저는 [ 조개류 ] 알레르기가 있습니다. 전복미역국에…”'},
+      {img:'result',b:[36,2236,355,2292],tag:'음성 · 복사',s:'화면을 보여 주거나 한국어 음성으로 들려줍니다.'}]}
+  ];
+  // 시연용 메뉴판 좌표(600×840) → 미리보기 화면 좌표(390×844)
+  var MR=[[40,190,87,215,508,191,560,215],[40,241,87,266,508,242,560,266],[40,292,118,317,508,293,560,317],[40,343,118,368,508,344,560,368],[40,394,118,419,508,395,560,419],[40,489,182,514,508,490,560,514],[40,540,161,565,508,541,560,565],[40,591,176,616,508,592,560,616],[40,686,87,711,508,687,560,711],[40,737,103,762,508,738,560,762]];
+  var ana=$('ana'), kx=227/600, ky=318/840, ox=81.5, oy=168;
+  function pct(x,y,w,h){ return 'left:'+(x/390*100)+'%;top:'+(y/844*100)+'%;width:'+(w/390*100)+'%;height:'+(h/844*100)+'%'; }
+  MR.forEach(function(r){ ['nm','pr'].forEach(function(t,j){ var a=j?4:0, e=document.createElement('i');
+    e.className='bx '+(j?'pr':'nm'); e.style.cssText=pct(ox+r[a]*kx-2,oy+r[a+1]*ky-2,(r[a+2]-r[a])*kx+4,(r[a+3]-r[a+1])*ky+4); ana.appendChild(e); }); });
+  var list=$('flowlist'), scr=$('pxScreen'), img=$('pxImg'), cv=$('pxCanvas'), hl=$('pxHl'), hlT=$('pxHlT'), hot=$('pxHot'), tap=$('pxTap');
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var si=0, qi=0, curImg='profile', T=[], auto=false, autoT=null, btns=[];
+  var lastG='';
+  SC.forEach(function(sc,i){ if(sc.g!==lastG){ var g=document.createElement('li'); g.className='grp'; g.textContent=sc.g; list.appendChild(g); lastG=sc.g; }
+    var li=document.createElement('li'), b=document.createElement('button'); b.type='button'; b.innerHTML='<span>0'+(i+1)+'</span><b>'+sc.t+'</b>';
+    b.addEventListener('click',function(){ stopAuto(); show(i); reveal(); }); li.appendChild(b); list.appendChild(li); btns.push(b); });
+  function reveal(){ if(matchMedia('(max-width:960px)').matches) document.querySelector('.stage').scrollIntoView({block:'nearest',behavior:reduce?'auto':'smooth'}); }
+  function clear(){ T.forEach(clearTimeout); T=[]; }
+  function later(f,ms){ T.push(setTimeout(f,ms)); }
+  function setImg(k,cb){ if(k===curImg){ cb(); return; } var m=IM[k]; cv.classList.add('fade'); curImg=k;
+    later(function(){ img.src=m[0]; img.width=m[1]; img.height=m[2]; var done=function(){ img.onload=null; scr.scrollTop=0; cb(); cv.classList.remove('fade'); }; if(img.complete) done(); else img.onload=done; },200); }
+  function pScroll(y,H){ var t=y/H*cv.offsetHeight-scr.clientHeight/2; scr.scrollTo({top:Math.max(0,t),behavior:reduce?'auto':'smooth'}); }
+  function mark(p){ var m=IM[p.img], W=m[1], H=m[2], b=p.b;
+    if(!b){ hl.hidden=true; hot.hidden=true; return; }
+    var L=b[0]/W*100, Tp=b[1]/H*100, Wd=(b[2]-b[0])/W*100, Ht=(b[3]-b[1])/H*100;
+    hl.hidden=false; hl.className='hl'+(p.tone?' '+p.tone:'')+(p.hot?' pulse':'')+(b[1]<60?' below':'')+(b[0]>W*.5?' right':'');
+    hl.style.left=L+'%'; hl.style.top=Tp+'%'; hl.style.width=Wd+'%'; hl.style.height=Ht+'%'; hlT.textContent=p.tag||''; hlT.hidden=!p.tag;
+    hot.hidden=!p.hot; if(p.hot){ hot.style.left=L+'%'; hot.style.top=Tp+'%'; hot.style.width=Wd+'%'; hot.style.height=Ht+'%'; hot.setAttribute('aria-label',p.tag+' 누르기'); }
+    tap.style.left=(L+Wd/2)+'%'; tap.style.top=(Tp+Ht/2)+'%';
+    pScroll((b[1]+b[3])/2,H); }
+  function step(p){ $('pxSay').textContent=p.s; setImg(p.img,function(){ mark(p); }); }
+  function runAna(){ ana.hidden=false; ana.classList.remove('run'); void ana.offsetWidth;
+    var bx=[].slice.call(ana.querySelectorAll('.bx')), li=[].slice.call(ana.querySelectorAll('li'));
+    bx.forEach(function(e){ e.classList.remove('on'); }); li.forEach(function(e){ e.className=''; e.querySelector('em').textContent=''; });
+    var em=function(k,t){ li[k].querySelector('em').textContent=t; };
+    var phase=function(k){ li.forEach(function(e,i){ e.className=i<k?'done':i===k?'now':''; }); };
+    if(reduce){ bx.forEach(function(e){ e.classList.add('on'); }); phase(5); em(0,'10개'); em(1,'USD'); em(2,'AI 추정'); em(3,'조개류'); return; }
+    ana.classList.add('run'); phase(0);
+    var nm=bx.filter(function(e){return e.classList.contains('nm');}), pr=bx.filter(function(e){return e.classList.contains('pr');});
+    nm.forEach(function(e,i){ later(function(){ e.classList.add('on'); em(0,(i+1)+'개'); },300+i*150); });
+    later(function(){ phase(1); },1900);
+    pr.forEach(function(e,i){ later(function(){ e.classList.add('on'); },2000+i*120); });
+    later(function(){ em(1,'USD 10/10'); phase(2); },3400);
+    later(function(){ em(2,'AI 추정'); phase(3); },4600);
+    later(function(){ em(3,'조개류 · 맵기'); phase(4); },5700);
+    later(function(){ phase(5); em(4,'→'); },6700); }
+  function show(i){ clear(); si=i; qi=0; var sc=SC[i];
+    btns.forEach(function(b,j){ if(j===i) b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current'); });
+    $('pxSrc').innerHTML=SRC[sc.src]; $('pxProg').style.width=((i+1)/SC.length*100)+'%';
+    ana.hidden=true; step(sc.seq[0]);
+    if(sc.ana) later(runAna,260);
+    sc.seq.forEach(function(p,k){ if(k) later(function(){ qi=k; if(sc.seq[k-1].hot) doTap(); step(p); },k*1400); });
+    if(auto){ var d=sc.dur||Math.max(2600,sc.seq.length*1400+700); later(function(){ var last=sc.seq[sc.seq.length-1]; if(last.hot) doTap(); later(function(){ next(); },last.hot?450:0); },d); } }
+  function doTap(){ tap.classList.remove('on'); void tap.offsetWidth; tap.classList.add('on'); }
+  function next(){ if(si<SC.length-1) show(si+1); else stopAuto(); }
+  function prev(){ if(si>0) show(si-1); }
+  hot.addEventListener('click',function(){ var sc=SC[si], p=sc.seq[qi]; doTap(); clear();
+    if(qi<sc.seq.length-1){ later(function(){ qi++; step(sc.seq[qi]); },350); } else later(next,350); });
+  function setAuto(on){ auto=on; $('pxAuto').textContent=on?'■ 시연 중지':(si>0?'↺ 자동 시연 다시 시작':'▶ 자동 시연 (약 35초)'); }
+  function stopAuto(){ if(auto){ setAuto(false); clear(); } }
+  $('pxAuto').addEventListener('click',function(){ if(auto){ stopAuto(); } else { setAuto(true); show(0); reveal(); } });
+  $('pxNext').addEventListener('click',function(){ stopAuto(); next(); });
+  $('pxPrev').addEventListener('click',function(){ stopAuto(); prev(); });
+  Object.keys(IM).forEach(function(k){ new Image().src=IM[k][0]; });
+  if(img.complete) show(0); else img.addEventListener('load',function(){ show(0); },{once:true});
+
+  // 크게 보기
+  var vw=$('viewer'), vImg=vw.querySelector('img'), vP=vw.querySelector('p'), last=null;
+  document.addEventListener('click',function(e){ var b=e.target.closest('[data-full]'); if(!b) return; last=b; vImg.src=b.dataset.full; vP.textContent=b.dataset.cap||''; vw.hidden=false; document.body.style.overflow='hidden'; vw.querySelector('.x').focus(); });
+  function close(){ vw.hidden=true; document.body.style.overflow=''; if(last) last.focus(); }
+  vw.addEventListener('click',function(e){ if(e.target===vw||e.target.classList.contains('x')) close(); });
+  addEventListener('keydown',function(e){ if(e.key==='Escape'&&!vw.hidden) close(); });
+})();
+</script>

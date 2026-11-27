@@ -179,6 +179,7 @@ button{font:inherit;color:inherit}
 /* ───────── 데이터 (이력서 기준) ───────── */
 var PIPEGUIDE_URL='pipeguide/';
 var FITOUT_URL='fitout/';
+var FITBRIDGE_URL='fitbridge/';
 var CAT={
   semi:{n:'반도체 · 품질 분석',c:'#6dffa8'},
   ai:{n:'AI 서비스 · 교육',c:'#ff6ad5'},
@@ -216,10 +217,14 @@ var S=[
   org:'AI 기반 IT 직무 전환 교육 · 38시간',status:'38시간',
   sum:'생성형 AI · RAG · MCP · 바이브 코딩을 배우고 해커톤으로 이어졌습니다.',
   pts:['생성형 AI · RAG · MCP','바이브 코딩으로 자연어 요구사항 기반 개발'],tags:['생성형 AI','RAG','MCP','바이브 코딩']},
- {id:'fitbridge',kind:'proj',cat:'ai',x:7,z:-32,h:4.6,t:2026.53,date:'2026.07',title:'fitbridge',en:'AI HACKATHON',
-  org:'부산권 대학연합 AI 해커톤 · 4개 대학 연합 4인 팀',status:'우수상 · 동명대학교 총장상',
-  sum:'외국인 진로 맞춤 가이드 서비스. 4개 대학 학생이 모인 연합팀으로 해커톤에 참가해 우수상을 받았습니다.',
-  pts:['4개 대학 연합팀으로 서비스 기획 · 발표','AI 교육(생성형 AI · RAG · MCP · 바이브 코딩) 내용을 해커톤 결과물로 연결'],tags:['생성형 AI','RAG','바이브 코딩']},
+ {id:'fitbridge',kind:'proj',cat:'ai',x:7,z:-32,h:4.6,t:2026.53,date:'2026.07 · V2 2026.11',title:'FitBridge',en:'AI HACKATHON & PERSONAL PROJECT',
+  org:'부산권 대학연합 AI 해커톤 · 4개 대학 연합 4인 팀 → 해커톤 이후 개인 V2 고도화',status:'해커톤 우수상 · 개인 V2 고도화 완료',img:'img/fitbridge.jpg',link:FITBRIDGE_URL,
+  sum:'외국인 관광객을 위한 AI 음식 안내 서비스. 해커톤 팀 프로젝트 이후 기존 서비스의 문제를 발견하고 개인적으로 데이터 신뢰성, 기능 연계성 및 사용자 경험을 개선했다.',
+  groups:[
+   {h:'TEAM · 해커톤 (2026.07)',pts:['4인 팀 프로젝트','서비스 기획 및 PRD 작성','서비스 구조 설계 참여','해커톤 우수상 수상 (동명대학교 총장상)']},
+   {h:'PERSONAL · V2 고도화 (2026.11)',pts:['AI 추정 정보와 미확인 데이터 구분','식품 및 알레르기 지식 DB 구축','음식별 위험도, 가격, 직원 질문 기능 연결','불필요한 AI 반복 호출 제거','사용자 중심 UI/UX 재설계','실제 메뉴판 및 브라우저 자동화 테스트']},
+   {h:'RESULTS · 개인 V2',pts:['분석 결과 화면 길이 31.3% 감소','지도 경유 메뉴 분석 클릭 수 20% 감소','직원 질문 접근: 3,013px 스크롤에서 1회 터치','Playwright 자동화 테스트 106건 통과']}],
+  pts:['4인 팀 해커톤 우수상 수상 이후 개인 V2 고도화'],tags:['React','TypeScript','Gemini API','Python','UI/UX','AI-assisted Development']},
  {id:'duksan',kind:'proj',cat:'data',x:27,z:-16,h:4.8,t:2026.6,date:'2026.07 – 08',title:'덕산하이메탈 기업분석 입사지원서',en:'COMPANY ANALYSIS',
   org:'「우리동네 청일강소」 공모전 · (사)벤처기업협회 · 고용노동부 주최',status:'공모전 대상 · 개인',
   sum:'DART 공시 재무자료로 수익성과 사업부문을 분석해 Tableau로 시각화하고, 품질관리 직무 관점의 발전 방안을 제안했습니다.',
@@ -268,7 +273,7 @@ function openSpot(i){
     '<h2 id="ph"></h2><div class="org">'+esc(s.org)+'</div>'+
     (s.img?'<div class="shot"><img src="'+s.img+'" alt="'+esc(s.title)+' 실제 화면"></div>':'')+
     '<div class="chips"><span class="chip st">'+esc(s.status)+'</span><span class="chip">'+esc(CAT[s.cat].n)+'</span><span class="chip">'+esc(s.date)+'</span></div>'+
-    '<h3>OVERVIEW</h3><p class="b">'+esc(s.sum)+'</p><h3>'+(s.kind==='proj'?'WHAT I DID':'HIGHLIGHTS')+'</h3><ul>'+s.pts.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul>'+
+    '<h3>OVERVIEW</h3><p class="b">'+esc(s.sum)+'</p>'+(s.groups?s.groups.map(function(g){ return '<h3>'+esc(g.h)+'</h3><ul>'+g.pts.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul>'; }).join(''):'<h3>'+(s.kind==='proj'?'WHAT I DID':'HIGHLIGHTS')+'</h3><ul>'+s.pts.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul>')+
     '<div class="chips">'+s.tags.map(function(t){return '<span class="chip">'+esc(t)+'</span>';}).join('')+'</div>'+
     (s.link?'<a class="go" href="'+s.link+'" target="_blank" rel="noopener">'+esc(s.title)+' 포트폴리오 열기 ↗</a>':'')+
     '<div class="nav2"><button type="button" class="btn" id="pPrev">← PREV</button><button type="button" class="btn" id="pNext">NEXT →</button></div>';
